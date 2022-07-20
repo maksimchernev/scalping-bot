@@ -1,0 +1,16 @@
+{
+  "name": "scalping-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ccxt": "^1.90.57",
+    "dotenv": "^16.0.1",
+    "tulind": "^0.8.20"
+  }
+}
