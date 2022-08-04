@@ -2,15 +2,24 @@
   "name": "scalping-bot",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "dev": "nodemon ./app.js"
+  },
+  "engines": {
+    "node": "14.7.0"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "ccxt": "^1.90.57",
     "dotenv": "^16.0.1",
+    "node-telegram-bot-api": "^0.58.0",
+    "technicalindicators": "^3.1.0",
     "tulind": "^0.8.20"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.19"
   }
 }
