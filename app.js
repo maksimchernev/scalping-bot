@@ -102,18 +102,12 @@ const calculateEnterQuantity = async (buyArray, Time, direction) => {
         console.log(`${ticker} Price: `, currentPrice); 
 
         if (recentBuyArray.length == 0){
-            enterQuantity = availableBalanceUSDT/3
+            enterQuantity = availableBalanceUSDT/2
         } else if (recentBuyArray.length == 1) {
             if (currentPrice < recentBuyArray[0][0]) {
-                enterQuantity = availableBalanceUSDT/2 ///half of 2/3 = 1/3
+                enterQuantity = availableBalanceUSDT 
             } else {
-                enterQuantity = availableBalanceUSDT/4 ///fourth of 2/3 = 1/6
-            }
-        } else if (recentBuyArray.length == 2) {
-            if (currentPrice < recentBuyArray[0][0] && currentPrice < recentBuyArray[1][0]) {
-                enterQuantity = availableBalanceUSDT // half of 1/3 = 1/6 : 1/6 left OR half of 1/2 = 1/4 : 1/4 left
-            } else {
-                enterQuantity = 0
+                enterQuantity = 0 
             }
         } else {
             enterQuantity = 0
@@ -128,16 +122,10 @@ const calculateEnterQuantity = async (buyArray, Time, direction) => {
         console.log(`${ticker} Price: `, currentPrice);
 
         if (recentBuyArray.length == 0){
-            enterQuantity = availableBalanceBTC/3
+            enterQuantity = availableBalanceBTC/2
         } else if (recentBuyArray.length == 1) {
             if (currentPrice > recentBuyArray[0][0]) {
-                enterQuantity = availableBalanceBTC/2 ///half of 2/3 = 1/3
-            } else {
-                enterQuantity = availableBalanceBTC/4 ///fourth of 2/3 = 1/6
-            }
-        } else if (recentBuyArray.length == 2) {
-            if (currentPrice > recentBuyArray[0][0] && currentPrice > recentBuyArray[1][0]) {
-                enterQuantity = availableBalanceBTC // half of 1/3 = 1/6 : 1/6 left OR half of 1/2 = 1/4 : 1/4 left
+                enterQuantity = availableBalanceBTC
             } else {
                 enterQuantity = 0
             }
@@ -202,13 +190,29 @@ const waitBuyOrderCompletion = async (direction) => {
         }
         console.log('long order status', buyLongOrderInfo.status)
         console.log('LONG ORDER PURCHASE TIMED OUT, CANCELLING \n');
-        await binanceClient.cancelOrder(buyLongOrderInfo.id, ticker)
-        usdtAmount = null
-        buyQuantity = null
-        buyPrice = null
-        buyTime = new Date()
-        msg = 'failure'
+
+        try {
+            await binanceClient.cancelOrder(buyLongOrderInfo.id, ticker)
+        } catch(e) {
+            console.log('ERROR CANCELLING')
+        }
+        buyLongOrderInfo = await binanceClient.fetchOrder(buyLongOrderInfo.id, ticker)
+        if (buyLongOrderInfo.status === 'canceled') {
+            usdtAmount = null
+            buyQuantity = null
+            buyPrice = null
+            buyTime = new Date()
+            msg = 'failure'
+        } else if (buyLongOrderInfo.status === 'closed') {
+            console.log('LONG ORDER PURCHASE COMPLETE AT DOUBLE CHECK! \n');
+            buyQuantity = buyLongOrderInfo.amount
+            buyPrice = buyLongOrderInfo.average
+            usdtAmount = buyLongOrderInfo.cost
+            buyTime = new Date()
+            msg = 'success'
+        }
         return {msg, buyQuantity, buyPrice, buyTime, usdtAmount};
+
     } else if (direction == 'short') {
         console.log('WAITING BUY SHORT ORDER COMPLETION');
         for(let i = 0; i < 7; i++){
@@ -228,12 +232,27 @@ const waitBuyOrderCompletion = async (direction) => {
         }
         console.log('short order status', buyShortOrderInfo.status)
         console.log('SHORT ORDER PURCHASE TIMED OUT, CANCELLING \n');
-        await binanceClient.cancelOrder(buyShortOrderInfo.id, ticker)
-        usdtAmount = null
-        buyQuantity = null
-        buyPrice = null
-        buyTime = new Date()
-        msg = 'failure'
+
+        try {
+            await binanceClient.cancelOrder(buyShortOrderInfo.id, ticker)
+        } catch(e) {
+            console.log('ERROR CANCELLING')
+        }
+        buyShortOrderInfo = await binanceClient.fetchOrder(buyShortOrderInfo.id, ticker)
+        if (buyShortOrderInfo.status === 'canceled') {
+            usdtAmount = null
+            buyQuantity = null
+            buyPrice = null
+            buyTime = new Date()
+            msg = 'failure'
+        } else if (buyShortOrderInfo.status === 'closed') {
+            console.log('SHORT ORDER PURCHASE COMPLETE AT DOUBLE CHECK! \n');
+            buyQuantity = buyShortOrderInfo.amount
+            buyPrice = buyShortOrderInfo.average
+            usdtAmount = buyShortOrderInfo.cost
+            buyTime = new Date()
+            msg = 'success'
+        }
         return {msg, buyQuantity, buyPrice, buyTime, usdtAmount};
     } else {
         console.log('unknown direction')
@@ -293,13 +312,29 @@ const waitSellOrderCompletion = async (direction) => {
         }
         console.log('status', sellLongOrderInfo.status)
         console.log('LONG EXIT TIMED OUT, CANCELLING \n');
-        await binanceClient.cancelOrder(sellLongOrderInfo.id, ticker)
-        usdtAmount = null
-        sellQuantity = null
-        sellPrice = null
-        sellTime = new Date()
-        msg = 'failure'
+
+        try {
+            await binanceClient.cancelOrder(sellLongOrderInfo.id, ticker)
+        } catch(e) {
+            console.log('ERROR CANCELLING')
+        }
+        sellLongOrderInfo = await binanceClient.fetchOrder(sellLongOrderInfo.id, ticker)
+        if (sellLongOrderInfo.status === 'canceled') {
+            usdtAmount = null
+            sellQuantity = null
+            sellPrice = null
+            sellTime = new Date()
+            msg = 'failure'
+        } else if (sellLongOrderInfo.status === 'closed') {
+            console.log('LONG ORDER EXIT COMPLETE AT DOUBLE CHECK! \n');
+            sellQuantity = sellLongOrderInfo.amount
+            sellPrice = sellLongOrderInfo.average
+            usdtAmount = sellLongOrderInfo.cost
+            sellTime = new Date()
+            msg = 'success'
+        }
         return {msg, sellQuantity, sellPrice, sellTime, usdtAmount};
+
     } else if (direction == 'short') {
         console.log('WAITING SHORT EXIT ORDER COMPLETION');
         for(let i = 0; i < 7; i++){
@@ -319,12 +354,27 @@ const waitSellOrderCompletion = async (direction) => {
         }
         console.log('status', sellShortOrderInfo.status)
         console.log('SHORT EXIT TIMED OUT, CANCELLING \n');
-        await binanceClient.cancelOrder(sellShortOrderInfo.id, ticker)
-        usdtAmount = null
-        sellQuantity = null
-        sellPrice = null
-        sellTime = new Date()
-        msg = 'failure'
+
+        try {
+            await binanceClient.cancelOrder(sellShortOrderInfo.id, ticker)
+        } catch(e) {
+            console.log('ERROR CANCELLING')
+        }
+        sellShortOrderInfo = await binanceClient.fetchOrder(sellShortOrderInfo.id, ticker)
+        if (sellShortOrderInfo.status === 'canceled') {
+            usdtAmount = null
+            sellQuantity = null
+            sellPrice = null
+            sellTime = new Date()
+            msg = 'failure'
+        } else if (sellShortOrderInfo.status === 'closed') {
+            console.log('SHORT ORDER EXIT COMPLETE AT DOUBLE CHECK! \n');
+            sellQuantity = sellShortOrderInfo.amount
+            sellPrice = sellShortOrderInfo.average
+            usdtAmount = sellShortOrderInfo.cost
+            sellTime = new Date()
+            msg = 'success'
+        }
         return {msg, sellQuantity, sellPrice, sellTime, usdtAmount};
     } else {
         console.log('unknown direction')
@@ -432,10 +482,10 @@ const main = async() => {
                                 if (enterQuantity != 0){
                                     try {
 /*                                         let msg = 'success'
-                                        let buyQuantity = Math.floor(15/currentPrice)
+                                        let buyQuantity = enterQuantity
                                         let buyPrice = currentPrice
                                         let buyTime = Time
-                                        let usdtAmount = 15 */
+                                        let usdtAmount = 15  */
                                         let {msg, buyQuantity, buyPrice, buyTime, usdtAmount} = await buy(enterQuantity, currentPrice, 'long')
                                         if (msg === 'success') {
                                             availableBalanceUSDT = availableBalanceUSDT - usdtAmount
@@ -509,17 +559,23 @@ const main = async() => {
                                 if (enterQuantity != 0) {
                                     try {
 /*                                         let msg = 'success'
-                                        let buyQuantity = Math.floor(15/currentPrice)
+                                        let buyQuantity = enterQuantity
                                         let buyPrice = currentPrice
                                         let buyTime = Time
-                                        let usdtAmount = 15 */
+                                        let usdtAmount = 15  */
                                         let {msg, buyQuantity, buyPrice, buyTime, usdtAmount} = await buy(enterQuantity, currentPrice, 'short')
                                         if (msg == 'success') {
                                             availableBalanceBTC = availableBalanceBTC - buyQuantity
                                             console.log(' ')
-                                            bot.sendMessage(startMsg.chat.id, `enter short ${buyPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity}`)
-                                            console.log(`enter short ${buyPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity}`)
-                                            buyArrayShort.push([buyPrice, buyTime, buyQuantity])
+                                            let stoploss
+                                            if (inputIndicators.psar[buyIndex-1] - buyPrice  > 100) {
+                                                stoploss = buyPrice + (inputIndicators.psar[buyIndex-1] - buyPrice*0.7)
+                                            } else {
+                                                stoploss = inputIndicators.psar[buyIndex -1]
+                                            }
+                                            bot.sendMessage(startMsg.chat.id, `enter short ${buyPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${buyQuantity}, stop loss ${stoploss}`)
+                                            console.log(`enter short ${buyPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${buyQuantity}, stop loss ${stoploss}`)
+                                            buyArrayShort.push([buyPrice, buyTime, buyQuantity, stoploss])
                                             console.log('buyArrayShort:', buyArrayShort)
                                         } else if (msg == 'failure') {
                                             console.log(`short buy order did not work at ${currentPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity}`)
@@ -650,7 +706,7 @@ const main = async() => {
                             let sellQuantity = arr[2]
                             let sellPrice = currentPrice
                             let sellTime = Time
-                            let usdtAmount = 15 */
+                            let usdtAmount = 15  */
                             let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(arr[2], currentPrice, 'short')
 
                             if (msg == 'success') {
@@ -663,7 +719,7 @@ const main = async() => {
                                 statistics.push(`short profit ${profit}% ${usdtProfit}$`)
                                 profits.push([profit, usdtProfit])
                             } else if (msg == 'failure') {
-                                notSoldArr.push([arr[0], arr[1], arr[2]])
+                                notSoldArr.push([arr[0], arr[1], arr[2], arr[3]])
                                 console.log(`Exit short order did not work. Enter short ${arr[0]} at ${arr[1].toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} sell ${sellPrice} at ${Time}`)
                             }                           
                         } catch(e) {
@@ -671,7 +727,7 @@ const main = async() => {
                             continue
                         }
                     } else {
-                        notSoldArr.push([arr[0], arr[1],arr[2]])
+                        notSoldArr.push([arr[0], arr[1],arr[2], arr[3]])
                         console.log(`negative profit at short enter ${arr[0]} at ${arr[1].toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} short exit ${currentPrice} at ${Time}`)
                     }
                 }
@@ -692,6 +748,66 @@ const main = async() => {
                 console.log('we didnt enter short yet')
             }
             
+        }
+        ///stoploss logic
+        if(buyArrayShort.length != 0) {
+            console.log(`checking stoploss`)
+            let Time = new Date() 
+            let notSoldArrAtStoploss = []
+            for (let arr of buyArrayShort) {
+                let prices
+                try {
+                    prices = await binanceClient.fetchTicker(ticker) 
+                } catch(e) {
+                    console.error('ERROR DURING SELL SHORT PRICE FETCHING: ', e)
+                }
+                let currentPrice = prices.last
+                if (arr[3] <= currentPrice && Time - arr[1] >= 5*60*60*1000) {
+                    //TEST
+/*                     let msg = 'success'
+                    let sellQuantity = arr[2]
+                    let sellTime = Time 
+                    let sellPrice = currentPrice */
+                    try {
+                        let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(arr[2], currentPrice, 'short')
+    
+                        if (msg == 'success') {
+                            let profit = (arr[0]/sellPrice-1) *100
+                            let buyTime = arr[1].toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")
+                            sellTime = sellTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")
+                            console.log(`stop loss exit short ${sellPrice} ${sellTime} amount ${sellQuantity}(enter ${arr[0]} at ${arr[1].toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${arr[2]})`)
+                            bot.sendMessage(startMsg.chat.id, `stop loss exit short  ${sellPrice} ${sellTime} amount ${sellQuantity}(buy ${arr[0]} at ${arr[1].toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${arr[2]})`)
+                            statistics.push(`enter old short ${arr[0]} at ${buyTime} amount ${arr[2]}`)
+                            statistics.push(`stop loss exit old short ${sellPrice} at ${sellTime} amount ${sellQuantity}`)
+                            availableBalanceBTC = availableBalanceBTC + sellQuantity
+                            let usdtProfit = sellQuantity*sellPrice*((arr[0]/sellPrice)-1)
+                            statistics.push(`short loss (stoploss) ${profit}% ${usdtProfit}$`)
+                            profits.push([profit, usdtProfit])
+                        } else if (msg == 'failure') {
+                            notSoldArrAtStoploss.push([arr[0], arr[1], arr[2], arr[3]])
+                        }     
+                    } catch(e) {
+                        console.error('Error when exit short at stoploss', e)
+                        continue
+                    }
+                } else {
+                    console.log('did not hit stoploss')
+                    notSoldArrAtStoploss.push([arr[0], arr[1], arr[2], arr[3]])
+                }
+            }
+            if (notSoldArrAtStoploss.length < buyArrayShort.length) {
+                let accumulatedProfit = 0
+                let accumulatedProfitUSDT = 0
+                for (let i = 0; i < profits.length; i++) {
+                    accumulatedProfit = accumulatedProfit+profits[i][0]
+                    accumulatedProfitUSDT = accumulatedProfit+profits[i][1]
+                }
+                console.log(`accumulatedProfit is ${accumulatedProfit}% ${accumulatedProfitUSDT}$`)
+                console.log('statistics: ', statistics)
+                console.log('buyArrayShort is: ', buyArrayShort)
+                buyArrayShort = notSoldArrAtStoploss
+                console.log('After sell newBuyArrayShort is: ', buyArrayShort)
+            }
         }
         try {
             await sync();
