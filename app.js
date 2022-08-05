@@ -38,8 +38,8 @@ const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sync = async () => {
 	//console.log('SYNCING ...');
 	let serverTime = await binanceClient.fetchTime();
-    let timeTillTheEndOfTheMinute = 20000 - (serverTime % 20000);
-    await wait(timeTillTheEndOfTheMinute+18000); // delay to get most accurate data in a minute frame
+    let timeTillTheEndOfTheMinute = 10000 - (serverTime % 10000);
+    await wait(timeTillTheEndOfTheMinute+8000); // delay to get most accurate data in a minute frame
 }
 
 const initializeInputIndicators = async() => {
