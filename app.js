@@ -13,8 +13,8 @@ const bot = new TelegramBot(token, {polling: true});
 let startMsg
 const candleTypeRange = 5
 const ticker = 'BTC/USDT'
-let availableBalanceUSDT = 1000
-let availableBalanceBTC = 0.055
+let availableBalanceUSDT = 1300
+let availableBalanceBTC = 0.059
 
 const binanceClient = new ccxt.binance({
     apiKey: process.env.API_KEY,
@@ -472,12 +472,12 @@ const main = async() => {
 
                                 if (enterQuantity != 0){
                                     try {
-/*                                         let msg = 'success'
+                                        let msg = 'success'
                                         let buyQuantity = enterQuantity
                                         let buyPrice = currentPrice
                                         let buyTime = Time
-                                        let usdtAmount = 15  */
-                                        let {msg, buyQuantity, buyPrice, buyTime, usdtAmount} = await buy(enterQuantity, currentPrice, 'long')
+                                        let usdtAmount = 1300
+                                        //let {msg, buyQuantity, buyPrice, buyTime, usdtAmount} = await buy(enterQuantity, currentPrice, 'long')
                                         if (msg === 'success') {
                                             availableBalanceUSDT = availableBalanceUSDT - usdtAmount
                                             console.log(' ')
@@ -555,12 +555,12 @@ const main = async() => {
 
                                 if (enterQuantity != 0) {
                                     try {
-/*                                         let msg = 'success'
+                                        let msg = 'success'
                                         let buyQuantity = enterQuantity
                                         let buyPrice = currentPrice
                                         let buyTime = Time
-                                        let usdtAmount = 15  */
-                                        let {msg, buyQuantity, buyPrice, buyTime, usdtAmount} = await buy(enterQuantity, currentPrice, 'short')
+                                        let usdtAmount = 1300
+                                        //let {msg, buyQuantity, buyPrice, buyTime, usdtAmount} = await buy(enterQuantity, currentPrice, 'short')
                                         if (msg == 'success') {
                                             availableBalanceBTC = availableBalanceBTC - buyQuantity
                                             console.log(' ')
@@ -627,12 +627,12 @@ const main = async() => {
                     if(profit > 0.0010) {
                         console.log(`Selling long at ${Time}`)
                         try {
-/*                             let msg = 'success'
+                            let msg = 'success'
                             let sellQuantity = arr[2]
                             let sellPrice = currentPrice
                             let sellTime = Time
-                            let usdtAmount = 15 */
-                            let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(arr[2], currentPrice, 'long')
+                            let usdtAmount = 1300
+                            //let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(arr[2], currentPrice, 'long')
 
                             if (msg == 'success') {
                                 availableBalanceUSDT = availableBalanceUSDT + usdtAmount
@@ -689,12 +689,13 @@ const main = async() => {
                 let currentPrice = prices.last
                 if (arr[3] >= currentPrice && Time - arr[1] >= 5*60*1000) {
                     //TEST
-/*                     let msg = 'success'
+                    let msg = 'success'
                     let sellQuantity = arr[2]
                     let sellTime = Time 
-                    let sellPrice = currentPrice */
+                    let sellPrice = currentPrice
+                    let usdtAmount = 1300
                     try {
-                        let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(arr[2], currentPrice, 'long')
+                        //let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(arr[2], currentPrice, 'long')
     
                         if (msg == 'success') {
                             let profit = (sellPrice/arr[0]-1) *100
@@ -759,12 +760,12 @@ const main = async() => {
                     if(profit > 0.0010) {
                         console.log(`Exiting short at ${Time}`)
                         try {
-/*                             let msg = 'success'
+                            let msg = 'success'
                             let sellQuantity = arr[2]
                             let sellPrice = currentPrice
                             let sellTime = Time
-                            let usdtAmount = 15  */
-                            let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(arr[2], currentPrice, 'short')
+                            let usdtAmount = 1300
+                            //let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(arr[2], currentPrice, 'short')
 
                             if (msg == 'success') {
                                 availableBalanceBTC = availableBalanceBTC + sellQuantity
@@ -821,12 +822,13 @@ const main = async() => {
                 let currentPrice = prices.last
                 if (arr[3] <= currentPrice && Time - arr[1] >= 5*60*1000) {
                     //TEST
-/*                     let msg = 'success'
+                    let msg = 'success'
                     let sellQuantity = arr[2]
                     let sellTime = Time 
-                    let sellPrice = currentPrice */
+                    let sellPrice = currentPrice
+                    let usdtAmount = 1300
                     try {
-                        let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(arr[2], currentPrice, 'short')
+                        //let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(arr[2], currentPrice, 'short')
     
                         if (msg == 'success') {
                             let profit = (arr[0]/sellPrice-1) *100
@@ -989,6 +991,6 @@ bot.onText(/\/unsold/, (msg) => {
     }
 });
 
-bot.onText(/\/accumulatedProfit/, (msg) => {
-    bot.sendMessage(msg.chat.id, ` Accumulated profit is: ${accumulatedProfit} from ${startTime}`)
+bot.onText(/\/profit/, (msg) => {
+    bot.sendMessage(msg.chat.id, ` Accumulated profit is: ${accumulatedProfit}%, ${accumulatedProfitUSDT} from ${startTime}`)
 });
