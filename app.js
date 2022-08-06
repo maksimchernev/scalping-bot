@@ -399,6 +399,8 @@ let statistics = []
 let buyArrayLong = []
 let buyArrayShort = []
 let startTime
+let accumulatedProfit = 0
+let accumulatedProfitUSDT = 0
 
 const main = async() => {
     //wait till 18sec, 38sec or 58sec when started
@@ -660,8 +662,8 @@ const main = async() => {
                     }
                 }
                 if (notSoldArr.length < buyArrayLong.length) {
-                    let accumulatedProfit = 0
-                    let accumulatedProfitUSDT = 0
+                    accumulatedProfit = 0
+                    accumulatedProfitUSDT = 0
                     for (let i = 0; i < profits.length; i++) {
                         accumulatedProfit = accumulatedProfit+profits[i][0]
                         accumulatedProfitUSDT = accumulatedProfitUSDT+profits[i][1]
@@ -732,8 +734,8 @@ const main = async() => {
                     }
                 }
                 if (notSoldArr.length < buyArrayShort.length) {
-                    let accumulatedProfit = 0
-                    let accumulatedProfitUSDT = 0
+                    accumulatedProfit = 0
+                    accumulatedProfitUSDT = 0
                     for (let i = 0; i < profits.length; i++) {
                         accumulatedProfit = accumulatedProfit+profits[i][0]
                         accumulatedProfitUSDT = accumulatedProfit+profits[i][1]
@@ -796,8 +798,8 @@ const main = async() => {
                 }
             }
             if (notSoldArrAtStoploss.length < buyArrayShort.length) {
-                let accumulatedProfit = 0
-                let accumulatedProfitUSDT = 0
+                accumulatedProfit = 0
+                accumulatedProfitUSDT = 0
                 for (let i = 0; i < profits.length; i++) {
                     accumulatedProfit = accumulatedProfit+profits[i][0]
                     accumulatedProfitUSDT = accumulatedProfit+profits[i][1]
