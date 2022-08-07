@@ -566,7 +566,7 @@ const main = async() => {
                                             console.log(' ')
                                             let stoploss
                                             if (inputIndicators.psar[buyIndex-1] - buyPrice  > 100) {
-                                                stoploss = buyPrice + (inputIndicators.psar[buyIndex-1] - buyPrice*0.7)
+                                                stoploss = buyPrice + ((inputIndicators.psar[buyIndex-1] - buyPrice)*0.7)
                                             } else {
                                                 stoploss = inputIndicators.psar[buyIndex -1]
                                             }
@@ -612,12 +612,14 @@ const main = async() => {
             console.log(`PSAR long exit signal now at ${TestTime}`)
             if (buyArrayLong.length != 0) { // make sure we bought at least once
                 let prices
+                let currentPrice
                 try {
                     prices = await binanceClient.fetchTicker(ticker) 
+                    currentPrice = prices.last
                 } catch(e) {
                     console.error('ERROR DURING SELL LONG PRICE FETCHING: ', e)
+                    break
                 }
-                let currentPrice = prices.last
                 let Time = new Date()
                 Time = Time.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")
                 let notSoldArr = []
@@ -681,12 +683,14 @@ const main = async() => {
             let notSoldArrAtStoploss = []
             for (let arr of buyArrayLong) {
                 let prices
+                let currentPrice
                 try {
                     prices = await binanceClient.fetchTicker(ticker) 
+                    currentPrice = prices.last
                 } catch(e) {
                     console.error('ERROR DURING SELL LONG PRICE FETCHING: ', e)
+                    break
                 }
-                let currentPrice = prices.last
                 if (arr[3] >= currentPrice && Time - arr[1] >= 5*60*1000) {
                     //TEST
                     let msg = 'success'
@@ -745,12 +749,14 @@ const main = async() => {
             console.log(`PSAR short exit signal now at ${TestTime}`)
             if (buyArrayShort.length != 0) { // make sure we bought at least once
                 let prices
+                let currentPrice
                 try {
                     prices = await binanceClient.fetchTicker(ticker) 
+                    currentPrice = prices.last
                 } catch(e) {
                     console.error('ERROR DURING SELL SHORT PRICE FETCHING: ', e)
+                    break
                 }
-                let currentPrice = prices.last
                 let Time = new Date() 
                 Time = Time.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")
                 let notSoldArr = []
@@ -814,12 +820,15 @@ const main = async() => {
             let notSoldArrAtStoploss = []
             for (let arr of buyArrayShort) {
                 let prices
+                let currentPrice
                 try {
                     prices = await binanceClient.fetchTicker(ticker) 
+                    currentPrice = prices.last
                 } catch(e) {
                     console.error('ERROR DURING SELL SHORT PRICE FETCHING: ', e)
+                    break
                 }
-                let currentPrice = prices.last
+
                 if (arr[3] <= currentPrice && Time - arr[1] >= 5*60*1000) {
                     //TEST
                     let msg = 'success'
