@@ -441,69 +441,74 @@ const main = async() => {
             if (inputIndicators.psar[iPSAR] < inputIndicators.low[i] && inputIndicators.psar[iPSAR-1] >= inputIndicators.high[i-1]) {
                 //writing index where signal occured
                 let buyIndex = i
-                console.log('ENTER LONG INFO')
-                console.log(`PSAR long enter signal ${inputIndicators.high.length-1-buyIndex} epoches ago at ${TestTime}`)
-                //logic to check on PSAR before signal location relatively to EMA 
-                if (inputIndicators.psar[buyIndex-1-1] > inputIndicators.ema[buyIndex-1]) {
-                    console.log(`Long! Prev psar indicator находится выше! Ema: ${inputIndicators.ema[buyIndex-1]}, prev Psar: ${inputIndicators.psar[buyIndex-1-1]}`)
-                    if (inputIndicators.macd[inputIndicators.macd.length-1] > inputIndicators.macdSignal[inputIndicators.macdSignal.length-1]) {
-                        console.log(`Macd is higher than mcd signal! Macd: ${inputIndicators.macd[inputIndicators.macd.length-1]}, Macd signal: ${inputIndicators.macdSignal[inputIndicators.macdSignal.length-1]}`)
-                        let Time = new Date()
-                        let alreadyBought = false
-                        if (buyArrayLong.length != 0 ) {
-                            for (let arr of buyArrayLong) {
-                                if (Time-arr[1] < (epoches+1)*candleTypeRange*60*1000-10000 ) {
-                                    alreadyBought = true 
-                                    break
-                                } 
+                // logic to check on current candle penetration of the previous PSAR
+                if ((inputIndicators.candleType[inputIndicators.candleType.length-1] == "red" && inputIndicators.high[inputIndicators.high.length-1] > inputIndicators.psar[buyIndex-1-1]) || (inputIndicators.candleType[inputIndicators.candleType.length-1] == "green" && inputIndicators.high[inputIndicators.high.length-1] > inputIndicators.psar[buyIndex-1-1])) {
+                    console.log('ENTER LONG INFO')
+                    console.log(`PSAR long enter signal ${inputIndicators.high.length-1-buyIndex} epoches ago at ${TestTime}`)
+                    //logic to check on PSAR before signal location relatively to EMA 
+                    if (inputIndicators.psar[buyIndex-1-1] > inputIndicators.ema[buyIndex-1]) {
+                        console.log(`Long! Prev psar indicator находится выше! Ema: ${inputIndicators.ema[buyIndex-1]}, prev Psar: ${inputIndicators.psar[buyIndex-1-1]}`)
+                        if (inputIndicators.macd[inputIndicators.macd.length-1] > inputIndicators.macdSignal[inputIndicators.macdSignal.length-1]) {
+                            console.log(`Macd is higher than mcd signal! Macd: ${inputIndicators.macd[inputIndicators.macd.length-1]}, Macd signal: ${inputIndicators.macdSignal[inputIndicators.macdSignal.length-1]}`)
+                            let Time = new Date()
+                            let alreadyBought = false
+                            if (buyArrayLong.length != 0 ) {
+                                for (let arr of buyArrayLong) {
+                                    if (Time-arr[1] < (epoches+1)*candleTypeRange*60*1000-10000 ) {
+                                        alreadyBought = true 
+                                        break
+                                    } 
+                                }
                             }
-                        }
-                        if (alreadyBought == false) {
-                            console.log(`Buying long... At ${Time}`)
+                            if (alreadyBought == false) {
+                                console.log(`Buying long... At ${Time}`)
 
-                            let {enterQuantity, currentPrice} = await calculateEnterQuantity(buyArrayLong, Time, 'long')//in USDT
-                            enterQuantity = enterQuantity/currentPrice // in BTC
-                            enterQuantity = Math.floor(enterQuantity * 100000) / 100000; // to 5 numbers after 0
+                                let {enterQuantity, currentPrice} = await calculateEnterQuantity(buyArrayLong, Time, 'long')//in USDT
+                                enterQuantity = enterQuantity/currentPrice // in BTC
+                                enterQuantity = Math.floor(enterQuantity * 100000) / 100000; // to 5 numbers after 0
 
-                            if (enterQuantity != 0){
-                                try {
-/*                                         let msg = 'success'
-                                    let buyQuantity = enterQuantity
-                                    let buyPrice = currentPrice
-                                    let buyTime = Time
-                                    let usdtAmount = 1300 */
-                                    let {msg, buyQuantity, buyPrice, buyTime, usdtAmount} = await buy(enterQuantity, currentPrice, 'long')
-                                    if (msg === 'success') {
-                                        availableBalanceUSDT = availableBalanceUSDT - usdtAmount
-                                        console.log(' ')
-                                        let stoploss
-                                        if (buyPrice - inputIndicators.psar[buyIndex-1] > 100) {
-                                            stoploss = buyPrice - ((buyPrice - inputIndicators.psar[buyIndex-1]) *0.7)
-                                        } else {
-                                            stoploss = inputIndicators.psar[buyIndex -1]
+                                if (enterQuantity != 0){
+                                    try {
+    /*                                         let msg = 'success'
+                                        let buyQuantity = enterQuantity
+                                        let buyPrice = currentPrice
+                                        let buyTime = Time
+                                        let usdtAmount = 1300 */
+                                        let {msg, buyQuantity, buyPrice, buyTime, usdtAmount} = await buy(enterQuantity, currentPrice, 'long')
+                                        if (msg === 'success') {
+                                            availableBalanceUSDT = availableBalanceUSDT - usdtAmount
+                                            console.log(' ')
+                                            let stoploss
+                                            if (buyPrice - inputIndicators.psar[buyIndex-1] > 100) {
+                                                stoploss = buyPrice - ((buyPrice - inputIndicators.psar[buyIndex-1]) *0.7)
+                                            } else if (buyPrice - inputIndicators.psar[buyIndex-1] <50) {
+                                                stoploss = buyPrice - 50
+                                            } else {
+                                                stoploss = inputIndicators.psar[buyIndex -1]
+                                            }
+                                            bot.sendMessage(startMsg.chat.id, `enter long ${buyPrice}, ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${buyQuantity}, stoploss ${stoploss}`)
+                                            console.log(`enter long ${buyPrice}, ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${buyQuantity}, stoploss ${stoploss}`)
+                                            buyArrayLong.push([buyPrice, buyTime, buyQuantity, stoploss])
+                                            console.log('buyArrayLong:', buyArrayLong)
+                                        } else if (msg == 'failure') {
+                                            console.log(`long buy order did not work at ${currentPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity}`)
                                         }
-                                        bot.sendMessage(startMsg.chat.id, `enter long ${buyPrice}, ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${buyQuantity}, stoploss ${stoploss}`)
-                                        console.log(`enter long ${buyPrice}, ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${buyQuantity}, stoploss ${stoploss}`)
-                                        buyArrayLong.push([buyPrice, buyTime, buyQuantity, stoploss])
-                                        console.log('buyArrayLong:', buyArrayLong)
-                                    } else if (msg == 'failure') {
-                                        console.log(`long buy order did not work at ${currentPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity}`)
+                                        
+                                    } catch (e) {
+                                        console.error('Error when buying long', e)
                                     }
-                                    
-                                } catch (e) {
-                                    console.error('Error when buying long', e)
+                                } else {
+                                    console.log('do not buy long since we entered too many times')
                                 }
                             } else {
-                                console.log('do not buy long since we entered too many times')
+                                console.log('already entered long here')
                             }
                         } else {
-                            console.log('already entered long here')
-                        }
+                            console.log(`macd is lower than macd signal. Macd: ${inputIndicators.macd[inputIndicators.macd.length-1]}, Macd signal: ${inputIndicators.macdSignal[inputIndicators.macdSignal.length-1]}`)
+                        }                        
                     } else {
-                        console.log(`macd is lower than macd signal. Macd: ${inputIndicators.macd[inputIndicators.macd.length-1]}, Macd signal: ${inputIndicators.macdSignal[inputIndicators.macdSignal.length-1]}`)
-                    }                        
-                } else {
-                    console.log(`prev psar indicator long находится ниже ema. Ema: ${inputIndicators.ema[buyIndex-1]}, prev Psar: ${inputIndicators.psar[buyIndex-1-1]}` )
+                        console.log(`prev psar indicator long находится ниже ema. Ema: ${inputIndicators.ema[buyIndex-1]}, prev Psar: ${inputIndicators.psar[buyIndex-1-1]}` )
+                    }
                 }
             } 
         }
@@ -516,71 +521,77 @@ const main = async() => {
             let iPSAR = i-1
             let TestTime = new Date().toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")
             //logic to find PSAR sell signal
+            
                 if (inputIndicators.psar[iPSAR] > inputIndicators.high[i] && inputIndicators.psar[iPSAR-1] <= inputIndicators.low[i-1]) {
                 //writing index where signal occured
                 let buyIndex = i
-                //console.log(' ')
-                console.log('ENTER SHORT INFO')
-                console.log(`PSAR short enter signal ${inputIndicators.low.length-1-buyIndex} epoches ago at ${TestTime}`)
-                //logic to check on PSAR before signal location relatively to EMA 
-                if (inputIndicators.psar[buyIndex-1-1] < inputIndicators.ema[buyIndex-1]) {
-                    console.log(`Short! Prev psar indicator находится ниже! Ema: ${inputIndicators.ema[buyIndex-1]}, prev Psar: ${inputIndicators.psar[buyIndex-1-1]}` )
-                    if (inputIndicators.macd[inputIndicators.macd.length-1] < inputIndicators.macdSignal[inputIndicators.macdSignal.length-1]) {
-                        console.log(`Macd is lower than mcd signal! Macd: ${inputIndicators.macd[inputIndicators.macd.length-1]}, Macd signal: ${inputIndicators.macdSignal[inputIndicators.macdSignal.length-1]}`)
-                        let Time = new Date()
-                        let alreadyBought = false
-                        if (buyArrayShort.length != 0 ) {
-                            for (let arr of buyArrayShort) {
-                                if (Time-arr[1] < (epoches+1)*candleTypeRange*60*1000-10000 ) {
-                                    alreadyBought = true 
-                                    break
-                                } 
+                // logic to check on current candle penetration of the previous PSAR
+                if ((inputIndicators.candleType[inputIndicators.candleType.length-1] == "red" && inputIndicators.low[inputIndicators.low.length-1] < inputIndicators.psar[buyIndex-1-1]) || (inputIndicators.candleType[inputIndicators.candleType.length-1] == "green" && inputIndicators.low[inputIndicators.low.length-1] < inputIndicators.psar[buyIndex-1-1])) {
+                    //console.log(' ')
+                    console.log('ENTER SHORT INFO')
+                    console.log(`PSAR short enter signal ${inputIndicators.low.length-1-buyIndex} epoches ago at ${TestTime}`)
+                    //logic to check on PSAR before signal location relatively to EMA 
+                    if (inputIndicators.psar[buyIndex-1-1] < inputIndicators.ema[buyIndex-1]) {
+                        console.log(`Short! Prev psar indicator находится ниже! Ema: ${inputIndicators.ema[buyIndex-1]}, prev Psar: ${inputIndicators.psar[buyIndex-1-1]}` )
+                        if (inputIndicators.macd[inputIndicators.macd.length-1] < inputIndicators.macdSignal[inputIndicators.macdSignal.length-1]) {
+                            console.log(`Macd is lower than mcd signal! Macd: ${inputIndicators.macd[inputIndicators.macd.length-1]}, Macd signal: ${inputIndicators.macdSignal[inputIndicators.macdSignal.length-1]}`)
+                            let Time = new Date()
+                            let alreadyBought = false
+                            if (buyArrayShort.length != 0 ) {
+                                for (let arr of buyArrayShort) {
+                                    if (Time-arr[1] < (epoches+1)*candleTypeRange*60*1000-10000 ) {
+                                        alreadyBought = true 
+                                        break
+                                    } 
+                                }
                             }
-                        }
-                        if (alreadyBought == false) {
-                            console.log(`Buying short... At ${Time}`)
+                            if (alreadyBought == false) {
+                                console.log(`Buying short... At ${Time}`)
 
-                            let {enterQuantity, currentPrice} = await calculateEnterQuantity(buyArrayShort, Time, 'short')//in BTC
-                            enterQuantity = Math.floor(enterQuantity * 100000) / 100000; // to 5 numbers after 0
+                                let {enterQuantity, currentPrice} = await calculateEnterQuantity(buyArrayShort, Time, 'short')//in BTC
+                                enterQuantity = Math.floor(enterQuantity * 100000) / 100000; // to 5 numbers after 0
 
-                            if (enterQuantity != 0) {
-                                try {
-/*                                         let msg = 'success'
-                                    let buyQuantity = enterQuantity
-                                    let buyPrice = currentPrice
-                                    let buyTime = Time
-                                    let usdtAmount = 1300 */
-                                    let {msg, buyQuantity, buyPrice, buyTime, usdtAmount} = await buy(enterQuantity, currentPrice, 'short')
-                                    if (msg == 'success') {
-                                        availableBalanceBTC = availableBalanceBTC - buyQuantity
-                                        console.log(' ')
-                                        let stoploss
-                                        if (inputIndicators.psar[buyIndex-1] - buyPrice  > 100) {
-                                            stoploss = buyPrice + ((inputIndicators.psar[buyIndex-1] - buyPrice)*0.7)
-                                        } else {
-                                            stoploss = inputIndicators.psar[buyIndex -1]
+                                if (enterQuantity != 0) {
+                                    try {
+    /*                                  let msg = 'success'
+                                        let buyQuantity = enterQuantity
+                                        let buyPrice = currentPrice
+                                        let buyTime = Time
+                                        let usdtAmount = 1300 */
+                                        let {msg, buyQuantity, buyPrice, buyTime, usdtAmount} = await buy(enterQuantity, currentPrice, 'short')
+                                        if (msg == 'success') {
+                                            availableBalanceBTC = availableBalanceBTC - buyQuantity
+                                            console.log(' ')
+                                            let stoploss
+                                            if (inputIndicators.psar[buyIndex-1] - buyPrice  > 100) {
+                                                stoploss = buyPrice + ((inputIndicators.psar[buyIndex-1] - buyPrice)*0.7)
+                                            } else if (inputIndicators.psar[buyIndex-1] - buyPrice  < 50){
+                                                stoploss = buyPrice+50
+                                            } else {
+                                                stoploss = inputIndicators.psar[buyIndex -1]
+                                            }
+                                            bot.sendMessage(startMsg.chat.id, `enter short ${buyPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${buyQuantity}, stop loss ${stoploss}`)
+                                            console.log(`enter short ${buyPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${buyQuantity}, stop loss ${stoploss}`)
+                                            buyArrayShort.push([buyPrice, buyTime, buyQuantity, stoploss])
+                                            console.log('buyArrayShort:', buyArrayShort)
+                                        } else if (msg == 'failure') {
+                                            console.log(`short buy order did not work at ${currentPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity}`)
                                         }
-                                        bot.sendMessage(startMsg.chat.id, `enter short ${buyPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${buyQuantity}, stop loss ${stoploss}`)
-                                        console.log(`enter short ${buyPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${buyQuantity}, stop loss ${stoploss}`)
-                                        buyArrayShort.push([buyPrice, buyTime, buyQuantity, stoploss])
-                                        console.log('buyArrayShort:', buyArrayShort)
-                                    } else if (msg == 'failure') {
-                                        console.log(`short buy order did not work at ${currentPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity}`)
+                                    } catch (e) {
+                                        console.error('Error when buying short ', e)
                                     }
-                                } catch (e) {
-                                    console.error('Error when buying short ', e)
+                                } else {
+                                    console.log('do not buy short since we entered too many times')
                                 }
                             } else {
-                                console.log('do not buy short since we entered too many times')
+                                console.log('already entered short here')
                             }
                         } else {
-                            console.log('already entered short here')
+                            console.log(`macd is higher than mcd signal. Macd: ${inputIndicators.macd[inputIndicators.macd.length-1]}, Macd signal: ${inputIndicators.macdSignal[inputIndicators.macdSignal.length-1]}`)
                         }
                     } else {
-                        console.log(`macd is higher than mcd signal. Macd: ${inputIndicators.macd[inputIndicators.macd.length-1]}, Macd signal: ${inputIndicators.macdSignal[inputIndicators.macdSignal.length-1]}`)
+                        console.log(`prev psar indicator short находится выше ema. Ema: ${inputIndicators.ema[buyIndex-1]}, prev Psar: ${inputIndicators.psar[buyIndex-1-1]}` )
                     }
-                } else {
-                    console.log(`prev psar indicator short находится выше ema. Ema: ${inputIndicators.ema[buyIndex-1]}, prev Psar: ${inputIndicators.psar[buyIndex-1-1]}` )
                 }
             } 
         }   
