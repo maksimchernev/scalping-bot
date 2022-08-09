@@ -765,7 +765,15 @@ const main = async() => {
                     } while (keepTrying)
                 } else {
                     console.log('did not hit stoploss')
-                    notSoldArrAtStoploss.push([arr[0], arr[1], arr[2], arr[3]])
+                    let stoploss
+                    if (currentPrice - arr[0] > 50) {
+                        stoploss = arr[0]
+                        console.log(`replacing stoploss ${stoploss}`)
+                    } else {
+                        console.log('not replacing stoploss')
+                        stoploss = arr[3]
+                    }
+                    notSoldArrAtStoploss.push([arr[0], arr[1], arr[2], stoploss])
                 }
             }
             if (notSoldArrAtStoploss.length < buyArrayLong.length) {
@@ -924,10 +932,18 @@ const main = async() => {
                     } while(keepTrying)
                 } else {
                     console.log('did not hit stoploss')
-                    notSoldArrAtStoploss.push([arr[0], arr[1], arr[2], arr[3]])
+                    let stoploss
+                    if (arr[0] - currentPrice > 50) {
+                        stoploss = arr[0]
+                        console.log(`replacing stoploss ${stoploss}`)
+                    } else {
+                        console.log('not replacing stoploss')
+                        stoploss = arr[3]
+                    }
+                    notSoldArrAtStoploss.push([arr[0], arr[1], arr[2], stoploss])
                 }
             }
-            if (notSoldArrAtStoploss.length < buyArrayShort.length) {
+            if (notSoldArrAtStoploss.length <= buyArrayShort.length) {
                 accumulatedProfit = 0
                 accumulatedProfitUSDT = 0
                 for (let i = 0; i < profits.length; i++) {
