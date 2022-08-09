@@ -441,10 +441,13 @@ const main = async() => {
             if (inputIndicators.psar[iPSAR] < inputIndicators.low[i] && inputIndicators.psar[iPSAR-1] >= inputIndicators.high[i-1]) {
                 //writing index where signal occured
                 let buyIndex = i
+                console.log('ENTER LONG INFO')
+                console.log(`PSAR long enter signal ${inputIndicators.high.length-1-buyIndex} epoches ago at ${TestTime}`)
                 // logic to check on current candle penetration of the previous PSAR
-                if ((inputIndicators.candleType[inputIndicators.candleType.length-1] == "red" && inputIndicators.high[inputIndicators.high.length-1] > inputIndicators.psar[buyIndex-1-1]) || (inputIndicators.candleType[inputIndicators.candleType.length-1] == "green" && inputIndicators.high[inputIndicators.high.length-1] > inputIndicators.psar[buyIndex-1-1])) {
-                    console.log('ENTER LONG INFO')
-                    console.log(`PSAR long enter signal ${inputIndicators.high.length-1-buyIndex} epoches ago at ${TestTime}`)
+                if ((inputIndicators.candleType[inputIndicators.candleType.length-1] == "red" && inputIndicators.open[inputIndicators.open.length-1] > inputIndicators.psar[buyIndex-1-1]) || (inputIndicators.candleType[inputIndicators.candleType.length-1] == "green" && inputIndicators.close[inputIndicators.close.length-1] > inputIndicators.psar[buyIndex-1-1])) {
+                    console.log('Прострел LONG!')
+
+                    
                     //logic to check on PSAR before signal location relatively to EMA 
                     if (inputIndicators.psar[buyIndex-1-1] > inputIndicators.ema[buyIndex-1]) {
                         console.log(`Long! Prev psar indicator находится выше! Ema: ${inputIndicators.ema[buyIndex-1]}, prev Psar: ${inputIndicators.psar[buyIndex-1-1]}`)
@@ -524,12 +527,13 @@ const main = async() => {
             
                 if (inputIndicators.psar[iPSAR] > inputIndicators.high[i] && inputIndicators.psar[iPSAR-1] <= inputIndicators.low[i-1]) {
                 //writing index where signal occured
+                console.log('ENTER SHORT INFO')
+                console.log(`PSAR short enter signal ${inputIndicators.low.length-1-buyIndex} epoches ago at ${TestTime}`)
                 let buyIndex = i
                 // logic to check on current candle penetration of the previous PSAR
-                if ((inputIndicators.candleType[inputIndicators.candleType.length-1] == "red" && inputIndicators.low[inputIndicators.low.length-1] < inputIndicators.psar[buyIndex-1-1]) || (inputIndicators.candleType[inputIndicators.candleType.length-1] == "green" && inputIndicators.low[inputIndicators.low.length-1] < inputIndicators.psar[buyIndex-1-1])) {
-                    //console.log(' ')
-                    console.log('ENTER SHORT INFO')
-                    console.log(`PSAR short enter signal ${inputIndicators.low.length-1-buyIndex} epoches ago at ${TestTime}`)
+                if ((inputIndicators.candleType[inputIndicators.candleType.length-1] == "red" && inputIndicators.close[inputIndicators.close.length-1] < inputIndicators.psar[buyIndex-1-1]) || (inputIndicators.candleType[inputIndicators.candleType.length-1] == "green" && inputIndicators.open[inputIndicators.open.length-1] < inputIndicators.psar[buyIndex-1-1])) {
+                    console.log('Прострел SHORT')
+                    
                     //logic to check on PSAR before signal location relatively to EMA 
                     if (inputIndicators.psar[buyIndex-1-1] < inputIndicators.ema[buyIndex-1]) {
                         console.log(`Short! Prev psar indicator находится ниже! Ema: ${inputIndicators.ema[buyIndex-1]}, prev Psar: ${inputIndicators.psar[buyIndex-1-1]}` )
