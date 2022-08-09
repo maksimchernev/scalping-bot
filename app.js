@@ -1067,3 +1067,10 @@ bot.onText(/\/unsold/, (msg) => {
 bot.onText(/\/profit/, (msg) => {
     bot.sendMessage(msg.chat.id, ` Accumulated profit is: ${accumulatedProfit}%, ${accumulatedProfitUSDT} from ${startTime}`)
 });
+
+bot.onText(/\/clearunsold/, (msg) => {
+    buyArrayShort = []
+    buyArrayLong = []
+    bot.sendMessage(msg.chat.id, `Cleared!`)
+});
+
