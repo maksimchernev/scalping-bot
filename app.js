@@ -527,9 +527,10 @@ const main = async() => {
             
                 if (inputIndicators.psar[iPSAR] > inputIndicators.high[i] && inputIndicators.psar[iPSAR-1] <= inputIndicators.low[i-1]) {
                 //writing index where signal occured
+                let buyIndex = i
                 console.log('ENTER SHORT INFO')
                 console.log(`PSAR short enter signal ${inputIndicators.low.length-1-buyIndex} epoches ago at ${TestTime}`)
-                let buyIndex = i
+                
                 // logic to check on current candle penetration of the previous PSAR
                 if ((inputIndicators.candleType[inputIndicators.candleType.length-1] == "red" && inputIndicators.close[inputIndicators.close.length-1] < inputIndicators.psar[buyIndex-1-1]) || (inputIndicators.candleType[inputIndicators.candleType.length-1] == "green" && inputIndicators.open[inputIndicators.open.length-1] < inputIndicators.psar[buyIndex-1-1])) {
                     console.log('Прострел SHORT')
