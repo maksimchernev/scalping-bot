@@ -692,14 +692,6 @@ const main = async() => {
                     }
                 }
                 if (notSoldArr.length < buyArrayLong.length) {
-                    accumulatedProfit = 0
-                    accumulatedProfitUSDT = 0
-                    for (let i = 0; i < profits.length; i++) {
-                        accumulatedProfit = accumulatedProfit+profits[i][0]
-                        accumulatedProfitUSDT = accumulatedProfitUSDT+profits[i][1]
-                    }
-                    console.log(`accumulatedProfit is ${accumulatedProfit}% ${accumulatedProfitUSDT}$`)
-                    console.log('statistics: ', statistics)
                     console.log('buyArrayLong is: ', buyArrayLong)
                     buyArrayLong = notSoldArr
                     console.log('After sell newBuyArrayLong is: ', buyArrayLong)
@@ -776,19 +768,11 @@ const main = async() => {
                     notSoldArrAtStoploss.push([arr[0], arr[1], arr[2], stoploss])
                 }
             }
-            if (notSoldArrAtStoploss.length < buyArrayLong.length) {
-                accumulatedProfit = 0
-                accumulatedProfitUSDT = 0
-                for (let i = 0; i < profits.length; i++) {
-                    accumulatedProfit = accumulatedProfit+profits[i][0]
-                    accumulatedProfitUSDT = accumulatedProfit+profits[i][1]
-                }
-                console.log(`accumulatedProfit is ${accumulatedProfit}% ${accumulatedProfitUSDT}$`)
-                console.log('statistics: ', statistics)
-                console.log('buyArrayLong is: ', buyArrayLong)
+            if (notSoldArrAtStoploss.length <= buyArrayLong.length) {
+                console.log('buyArrayLong was: ', buyArrayLong)
                 buyArrayLong = notSoldArrAtStoploss
-                console.log('After sell newbuyArrayLong is: ', buyArrayLong)
-            }
+                console.log('NewbuyArrayLong is: ', buyArrayLong)   
+            }  
         }
 
 
@@ -858,14 +842,6 @@ const main = async() => {
                     }
                 }
                 if (notSoldArr.length < buyArrayShort.length) {
-                    accumulatedProfit = 0
-                    accumulatedProfitUSDT = 0
-                    for (let i = 0; i < profits.length; i++) {
-                        accumulatedProfit = accumulatedProfit+profits[i][0]
-                        accumulatedProfitUSDT = accumulatedProfit+profits[i][1]
-                    }
-                    console.log(`accumulatedProfit is ${accumulatedProfit}% ${accumulatedProfitUSDT}$`)
-                    console.log('statistics: ', statistics)
                     console.log('buyArrayShort is: ', buyArrayShort)
                     buyArrayShort = notSoldArr
                     console.log('After sell newBuyArrayShort is: ', buyArrayShort)
@@ -944,17 +920,9 @@ const main = async() => {
                 }
             }
             if (notSoldArrAtStoploss.length <= buyArrayShort.length) {
-                accumulatedProfit = 0
-                accumulatedProfitUSDT = 0
-                for (let i = 0; i < profits.length; i++) {
-                    accumulatedProfit = accumulatedProfit+profits[i][0]
-                    accumulatedProfitUSDT = accumulatedProfit+profits[i][1]
-                }
-                console.log(`accumulatedProfit is ${accumulatedProfit}% ${accumulatedProfitUSDT}$`)
-                console.log('statistics: ', statistics)
-                console.log('buyArrayShort is: ', buyArrayShort)
+                console.log('buyArrayShort was: ', buyArrayShort)
                 buyArrayShort = notSoldArrAtStoploss
-                console.log('After sell newBuyArrayShort is: ', buyArrayShort)
+                console.log('NewBuyArrayShort is: ', buyArrayShort)
             }
         }
         try {
@@ -1029,7 +997,13 @@ bot.onText(/\/stop/, (msg) => {
         } else {
             bot.sendMessage(msg.chat.id, `no unsold short yet`)
         }
-        bot.sendMessage(msg.chat.id, ` Accumulated profit is: ${accumulatedProfit} from ${startTime} UTC`)
+        accumulatedProfit = 0
+        accumulatedProfitUSDT = 0
+        for (let i = 0; i < profits.length; i++) {
+            accumulatedProfit = accumulatedProfit+profits[i][0]
+            accumulatedProfitUSDT = accumulatedProfit+profits[i][1]
+        }
+        bot.sendMessage(msg.chat.id, ` Accumulated profit is: ${accumulatedProfit}% ${accumulatedProfitUSDT}$ from ${startTime} UTC`)
     } else {
         bot.sendMessage(msg.chat.id, `Is not started yet`)
     }
@@ -1081,6 +1055,12 @@ bot.onText(/\/unsold/, (msg) => {
 });
 
 bot.onText(/\/profit/, (msg) => {
+    accumulatedProfit = 0
+    accumulatedProfitUSDT = 0
+    for (let i = 0; i < profits.length; i++) {
+        accumulatedProfit = accumulatedProfit+profits[i][0]
+        accumulatedProfitUSDT = accumulatedProfit+profits[i][1]
+    }
     bot.sendMessage(msg.chat.id, ` Accumulated profit is: ${accumulatedProfit}%, ${accumulatedProfitUSDT} from ${startTime}`)
 });
 
