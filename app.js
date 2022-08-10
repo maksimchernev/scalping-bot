@@ -36,15 +36,12 @@ const inputIndicators = {
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 const sync = async () => {
-	//console.log('SYNCING ...');
 	let serverTime = await binanceClient.fetchTime();
-    let timeTillTheEndOfTheMinute = 10000 - (serverTime % 10000);
-    await wait(timeTillTheEndOfTheMinute+8000); // delay to get most accurate data in a minute frame
+    let timeTillTheEndOfTheMinute = 30000 - (serverTime % 30000);
+    await wait(timeTillTheEndOfTheMinute+28000); // delay to get most accurate data in a minute frame
 }
 
 const initializeInputIndicators = async() => {
-    //console.log(' ')
-    //console.log(`UPDATING INPUT ${new Date(Date.now())}`);
     let candles = await binanceClient.fetchOHLCV(ticker,candleTypeRange+'m')
     inputIndicators.open = candles.map(arr => arr[1])
     inputIndicators.high = candles.map(arr => arr[2])
@@ -64,15 +61,12 @@ const calculatePSAR = async() => {
         if(err) return console.log(err);
         inputIndicators.psar = res[0];
     })
-    //console.log('PSAR: ', inputIndicators.psar.slice(-2))
-
 }
 const calculateEMA = async() => {
     tulind.indicators.ema.indicator([inputIndicators.close],[100],(err,res) => {
         if(err) return console.log(err);
         inputIndicators.ema = res[0];
     })
-    //console.log('EMA: ', inputIndicators.ema.slice(-2))
 }
 const calculateMACD = async() => {
     tulind.indicators.macd.indicator([inputIndicators.close],[12,26,9],(err,res) => {
@@ -110,7 +104,7 @@ const calculateEnterQuantity = async (buyArray, Time, direction) => {
             enterQuantity = 0
         }
         enterQuantity = Math.floor(enterQuantity)
-        console.log('EnterQuantity long: ', enterQuantity, '\n');
+        console.log('EnterQuantity long: ', enterQuantity);
     } else if (direction == 'short') {
         currentPrice = 1.00001 *prices.last;
         console.log(`${ticker} Price: `, currentPrice);
@@ -124,7 +118,7 @@ const calculateEnterQuantity = async (buyArray, Time, direction) => {
             enterQuantity = 0
         }
         enterQuantity = Math.floor(enterQuantity*100000)/100000
-        console.log('EnterQuantity short: ', enterQuantity, '\n');
+        console.log('EnterQuantity short: ', enterQuantity);
     }
     return { 
         enterQuantity,
@@ -142,11 +136,11 @@ const makeBuyOrder = async (buyQuantity, currentPrice, direction) => {
     if (direction == 'long') {
         console.log('MAKING BUY LONG ORDER');
         buyLongOrderInfo = await binanceClient.createOrder(ticker, 'limit', 'buy', buyQuantity, currentPrice)
-        console.log('buyLongOrderInfo: ', buyLongOrderInfo, '\n');
+        console.log('buyLongOrderInfo: ', buyLongOrderInfo);
     } else if (direction == 'short') {
         console.log('MAKING BUY SHORT ORDER');
         buyShortOrderInfo = await binanceClient.createOrder(ticker, 'limit', 'sell', buyQuantity, currentPrice)
-        console.log('buyShortOrderInfo: ', buyShortOrderInfo, '\n');
+        console.log('buyShortOrderInfo: ', buyShortOrderInfo);
     } else {
         console.log('unknown direction')
     }
@@ -265,11 +259,11 @@ const makeSellOrder = async (sellQuantity, currentPrice, direction) => {
     if (direction == 'long') {
         console.log('MAKING LONG EXIT ORDER');
         sellLongOrderInfo = await binanceClient.createOrder(ticker, 'limit', 'sell', sellQuantity, currentPrice)
-        console.log('sellLongOrderInfo: ', sellLongOrderInfo, '\n');
+        console.log('sellLongOrderInfo: ', sellLongOrderInfo);
     } else if (direction == 'short') {
         console.log('MAKING SHORT EXIT ORDER');
         sellShortOrderInfo = await binanceClient.createOrder(ticker, 'limit', 'buy', sellQuantity, currentPrice)
-        console.log('sellShortOrderInfo: ', sellShortOrderInfo, '\n');
+        console.log('sellShortOrderInfo: ', sellShortOrderInfo);
     } else {
         console.log('unknown direction')
     }
@@ -386,10 +380,176 @@ let run = true
 let statistics = []
 let buyArrayLong = []
 let buyArrayShort = []
+let profits = []
 let startTime
 let accumulatedProfit = 0
 let accumulatedProfitUSDT = 0
 
+const enterLong = async (buyArrayLong, Time, buyIndex) => {
+    let errorDidNotWork
+    let errorEnteredTooManyTimes
+    let errorInCalculatingEnterQuantity
+    console.log(`Buying long... At ${Time}`)                     
+    let {enterQuantity, currentPrice} = await calculateEnterQuantity(buyArrayLong, Time, 'long')//in USDT
+    //case error in calculate enter quantity
+    if (enterQuantity != undefined && currentPrice != undefined) {
+        errorInCalculatingEnterQuantity = false
+        enterQuantity = enterQuantity/currentPrice // in BTC
+        enterQuantity = Math.floor(enterQuantity * 100000) / 100000; // to 5 numbers after 0
+        if (enterQuantity != 0){
+            let msg = 'success'
+            let buyQuantity = enterQuantity
+            let buyPrice = currentPrice
+            let buyTime = Time
+            let usdtAmount = 1300 
+            errorEnteredTooManyTimes = false
+            //let {msg, buyQuantity, buyPrice, buyTime, usdtAmount} = await buy(enterQuantity, currentPrice, 'long')
+            if (msg === 'success') {
+                errorDidNotWork = false
+                availableBalanceUSDT = availableBalanceUSDT - usdtAmount
+                console.log(' ')
+                let stoploss
+            
+                if(buyIndex != undefined) {
+                    if (buyPrice - inputIndicators.psar[buyIndex-1] > 100) {
+                        stoploss = buyPrice - ((buyPrice - inputIndicators.psar[buyIndex-1]) *0.7)
+                    } else if (buyPrice - inputIndicators.psar[buyIndex-1] <50) {
+                        stoploss = buyPrice - 50
+                    } else {
+                        stoploss = inputIndicators.psar[buyIndex -1]
+                    }
+                } else {
+                    stoploss = buyPrice - 100
+                }
+                    
+                bot.sendMessage(startMsg.chat.id, `enter long ${buyPrice}, ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${buyQuantity}, stoploss ${stoploss}`)
+                console.log(`enter long ${buyPrice}, ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${buyQuantity}, stoploss ${stoploss}`)
+                buyArrayLong.push([buyPrice, buyTime, buyQuantity, stoploss])
+                console.log('buyArrayLong:', buyArrayLong)
+            } else if (msg == 'failure') {
+                errorDidNotWork = true
+                console.log(`long buy order did not work at ${currentPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity}`)
+            }
+        } else {
+            errorEnteredTooManyTimes = true
+            console.log('do not buy long since we entered too many times')
+        }
+    } else {
+        errorInCalculatingEnterQuantity = true
+        throw new Error('ERROR IN CALCULATE ENTER QUANTITY LONG')
+    }
+    return {errorDidNotWork, errorEnteredTooManyTimes, errorInCalculatingEnterQuantity}
+}
+const enterShort = async (buyArrayShort, Time, buyIndex) => {
+    let errorDidNotWork
+    let errorEnteredTooManyTimes
+    let errorInCalculatingEnterQuantity
+    console.log(`Buying short... At ${Time}`)
+    let {enterQuantity, currentPrice} = await calculateEnterQuantity(buyArrayShort, Time, 'short')//in BTC
+    if (enterQuantity !=undefined && currentPrice != undefined) {
+        errorInCalculatingEnterQuantity = false
+        enterQuantity = Math.floor(enterQuantity * 100000) / 100000; // to 5 numbers after 0
+        if (enterQuantity != 0) {
+            errorEnteredTooManyTimes = false
+            let msg = 'success'
+            let buyQuantity = enterQuantity
+            let buyPrice = currentPrice
+            let buyTime = Time
+            let usdtAmount = 1300 
+            //let {msg, buyQuantity, buyPrice, buyTime, usdtAmount} = await buy(enterQuantity, currentPrice, 'short')
+            if (msg == 'success') {
+                errorDidNotWork = false
+                availableBalanceBTC = availableBalanceBTC - buyQuantity
+                console.log(' ')
+                let stoploss
+                if(buyIndex != undefined) {
+                    if (inputIndicators.psar[buyIndex-1] - buyPrice  > 100) {
+                        stoploss = buyPrice + ((inputIndicators.psar[buyIndex-1] - buyPrice)*0.7)
+                    } else if (inputIndicators.psar[buyIndex-1] - buyPrice  < 50){
+                        stoploss = buyPrice+50
+                    } else {
+                        stoploss = inputIndicators.psar[buyIndex -1]
+                    }
+                } else {
+                    stoploss = buyPrice + 100
+                }
+                
+                bot.sendMessage(startMsg.chat.id, `enter short ${buyPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${buyQuantity}, stop loss ${stoploss}`)
+                console.log(`enter short ${buyPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${buyQuantity}, stop loss ${stoploss}`)
+                buyArrayShort.push([buyPrice, buyTime, buyQuantity, stoploss])
+                console.log('buyArrayShort:', buyArrayShort)
+            } else if (msg == 'failure') {
+                errorDidNotWork = true
+                console.log(`short buy order did not work at ${currentPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity}`)
+            }
+        } else {
+            errorEnteredTooManyTimes = true
+            console.log('do not buy short since we entered too many times')
+        }
+    } else {
+        errorInCalculatingEnterQuantity = true
+        throw new Error('ERROR IN CALCULATE ENTER QUANTITY SHORT')
+    }
+    return {errorDidNotWork, errorEnteredTooManyTimes, errorInCalculatingEnterQuantity}
+}
+const exitLong = async (buyPrice, buyTime, buyQuantity, stoploss, currentPrice, currentTime) => {
+    let msg = 'success'
+    let sellQuantity = buyQuantity
+    let sellPrice = currentPrice
+    let sellTime = currentTime
+    let usdtAmount = 1300 
+    let errorDidNotWork
+    console.log(`Exiting long at ${currentTime}`)
+    let notSold
+    //let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(buyQuantity, currentPrice, 'long')
+
+    if (msg == 'success') {
+        errorDidNotWork = false
+        availableBalanceUSDT = availableBalanceUSDT + usdtAmount
+        bot.sendMessage(startMsg.chat.id, `exit long ${sellPrice} ${sellTime} amount ${sellQuantity}(buy ${buyPrice} at ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity})`)
+        console.log(`exit long ${sellPrice} ${sellTime} amount ${sellQuantity}(buy ${buyPrice} at ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity})`)
+        statistics.push(`enter long ${buyPrice} at ${buyTime} amount ${buyQuantity}`)
+        statistics.push(`exit long ${sellPrice} at ${sellTime} amount ${sellQuantity}`)
+        let profit = (sellPrice/buyPrice-1) *100
+        let usdtProfit = buyPrice*buyQuantity*((sellPrice/buyPrice)-1)
+        statistics.push(`long profit(loss) ${profit}% ${usdtProfit}$`)
+        profits.push([profit, usdtProfit])
+    } else if (msg == 'failure') {
+        errorDidNotWork = true
+        notSold = [buyPrice, buyTime, buyQuantity, stoploss]
+        console.log(`Exit long order did not work. Buy price ${buyPrice} at ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} sell ${sellPrice} at ${currentTime}`)
+    }   
+    return {errorDidNotWork, notSold}
+}
+const exitShort = async (buyPrice, buyTime, buyQuantity, stoploss, currentPrice, currentTime) => {
+    let msg = 'success'
+    let sellQuantity = buyQuantity
+    let sellPrice = currentPrice
+    let sellTime = currentTime
+    let usdtAmount = 1300 
+    let errorDidNotWork
+    console.log(`Exiting short at ${currentTime}`)
+    let notSold
+    //let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(buyQuantity, currentPrice, 'short')
+
+    if (msg == 'success') {
+        errorDidNotWork = false
+        availableBalanceBTC = availableBalanceBTC + sellQuantity
+        bot.sendMessage(startMsg.chat.id, `exit short ${sellPrice} ${sellTime} amount ${sellQuantity}(buy ${buyPrice} at ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity})`)
+        console.log(`exit short ${sellPrice} ${sellTime} amount ${sellQuantity}(enter ${buyPrice} at ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity})`)
+        statistics.push(`enter short ${buyPrice} at ${buyTime} amount ${buyQuantity}`)
+        statistics.push(`exit short ${sellPrice} at ${sellTime} amount ${sellQuantity}`)
+        let profit = (buyPrice/sellPrice-1) *100
+        let usdtProfit = sellQuantity*sellPrice*((buyPrice/sellPrice)-1)
+        statistics.push(`short profit ${profit}% ${usdtProfit}$`)
+        profits.push([profit, usdtProfit])
+    } else if (msg == 'failure') {
+        errorDidNotWork = true
+        notSold = [buyPrice, buyTime, buyQuantity, stoploss]
+        console.log(`Exit short order did not work. Enter short ${buyPrice} at ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} sell ${sellPrice} at ${currentTime}`)
+    }     
+    return {errorDidNotWork, notSold}                    
+}
 const main = async() => {
     //wait till 18sec, 38sec or 58sec when started
     try {
@@ -397,7 +557,7 @@ const main = async() => {
     } catch(e) {
         console.error('ERROR DURING SYNC: ', e);
     }
-    let profits = []
+    
     let epoches = 3
     
     while(run){
@@ -441,7 +601,7 @@ const main = async() => {
             if (inputIndicators.psar[iPSAR] < inputIndicators.low[i] && inputIndicators.psar[iPSAR-1] >= inputIndicators.high[i-1]) {
                 //writing index where signal occured
                 let buyIndex = i
-                console.log('ENTER LONG INFO')
+                console.log('\n', 'ENTER LONG INFO')
                 console.log(`PSAR long enter signal ${inputIndicators.high.length-1-buyIndex} epoches ago at ${TestTime}`)
                 // logic to check on current candle penetration of the previous PSAR
                 if ((inputIndicators.candleType[inputIndicators.candleType.length-1] == "red" && inputIndicators.open[inputIndicators.open.length-1] > inputIndicators.psar[buyIndex-1-1]) || (inputIndicators.candleType[inputIndicators.candleType.length-1] == "green" && inputIndicators.close[inputIndicators.close.length-1] > inputIndicators.psar[buyIndex-1-1])) {
@@ -464,55 +624,17 @@ const main = async() => {
                                 }
                             }
                             if (alreadyBought == false) {
-                                console.log(`Buying long... At ${Time}`)
-                                
-                                let {enterQuantity, currentPrice} = await calculateEnterQuantity(buyArrayLong, Time, 'long')//in USDT
-                                //case error in calculate enter quantity
-                                if (enterQuantity != undefined && currentPrice != undefined) {
-                                    enterQuantity = enterQuantity/currentPrice // in BTC
-                                    enterQuantity = Math.floor(enterQuantity * 100000) / 100000; // to 5 numbers after 0
-                                    if (enterQuantity != 0){
-                                        let keepTrying
-                                        do {
-                                            try {
-            /*                                  let msg = 'success'
-                                                let buyQuantity = enterQuantity
-                                                let buyPrice = currentPrice
-                                                let buyTime = Time
-                                                let usdtAmount = 1300 */
-                                                let {msg, buyQuantity, buyPrice, buyTime, usdtAmount} = await buy(enterQuantity, currentPrice, 'long')
-                                                if (msg === 'success') {
-                                                    availableBalanceUSDT = availableBalanceUSDT - usdtAmount
-                                                    console.log(' ')
-                                                    let stoploss
-                                                    if (buyPrice - inputIndicators.psar[buyIndex-1] > 100) {
-                                                        stoploss = buyPrice - ((buyPrice - inputIndicators.psar[buyIndex-1]) *0.7)
-                                                    } else if (buyPrice - inputIndicators.psar[buyIndex-1] <50) {
-                                                        stoploss = buyPrice - 50
-                                                    } else {
-                                                        stoploss = inputIndicators.psar[buyIndex -1]
-                                                    }
-                                                    bot.sendMessage(startMsg.chat.id, `enter long ${buyPrice}, ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${buyQuantity}, stoploss ${stoploss}`)
-                                                    console.log(`enter long ${buyPrice}, ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${buyQuantity}, stoploss ${stoploss}`)
-                                                    buyArrayLong.push([buyPrice, buyTime, buyQuantity, stoploss])
-                                                    console.log('buyArrayLong:', buyArrayLong)
-                                                } else if (msg == 'failure') {
-                                                    console.log(`long buy order did not work at ${currentPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity}`)
-                                                }
-                                                keepTrying = false
-                                                
-                                            } catch (e) {
-                                                console.error('Error when buying long', e)
-                                                await wait(5000)
-                                                keepTrying = true
-                                            }
-                                        } while (keepTrying)
-                                    } else {
-                                        console.log('do not buy long since we entered too many times')
+                                let keepTrying
+                                do {
+                                    try {
+                                        await enterLong(buyArrayLong, Time, buyIndex)
+                                        keepTrying = false
+                                    } catch(e) {
+                                        console.error('ERROR WHEN ENTERING LONG')
+                                        await wait(5000)
+                                        keepTrying = true
                                     }
-                                } else {
-                                    console.error('ERROR IN CALCULATE ENTER QUANTITY LONG')
-                                }
+                                } while (keepTrying)
                             } else {
                                 console.log('already entered long here')
                             }
@@ -538,7 +660,7 @@ const main = async() => {
                 if (inputIndicators.psar[iPSAR] > inputIndicators.high[i] && inputIndicators.psar[iPSAR-1] <= inputIndicators.low[i-1]) {
                 //writing index where signal occured
                 let buyIndex = i
-                console.log('ENTER SHORT INFO')
+                console.log('\n', 'ENTER SHORT INFO')
                 console.log(`PSAR short enter signal ${inputIndicators.low.length-1-buyIndex} epoches ago at ${TestTime}`)
                 
                 // logic to check on current candle penetration of the previous PSAR
@@ -561,52 +683,17 @@ const main = async() => {
                                 }
                             }
                             if (alreadyBought == false) {
-                                console.log(`Buying short... At ${Time}`)
-
-                                let {enterQuantity, currentPrice} = await calculateEnterQuantity(buyArrayShort, Time, 'short')//in BTC
-                                if (enterQuantity !=undefined && currentPrice != undefined) {
-                                    enterQuantity = Math.floor(enterQuantity * 100000) / 100000; // to 5 numbers after 0
-                                    if (enterQuantity != 0) {
-                                        let keepTrying
-                                        do {
-                                            try {
-            /*                                  let msg = 'success'
-                                                let buyQuantity = enterQuantity
-                                                let buyPrice = currentPrice
-                                                let buyTime = Time
-                                                let usdtAmount = 1300 */
-                                                let {msg, buyQuantity, buyPrice, buyTime, usdtAmount} = await buy(enterQuantity, currentPrice, 'short')
-                                                if (msg == 'success') {
-                                                    availableBalanceBTC = availableBalanceBTC - buyQuantity
-                                                    console.log(' ')
-                                                    let stoploss
-                                                    if (inputIndicators.psar[buyIndex-1] - buyPrice  > 100) {
-                                                        stoploss = buyPrice + ((inputIndicators.psar[buyIndex-1] - buyPrice)*0.7)
-                                                    } else if (inputIndicators.psar[buyIndex-1] - buyPrice  < 50){
-                                                        stoploss = buyPrice+50
-                                                    } else {
-                                                        stoploss = inputIndicators.psar[buyIndex -1]
-                                                    }
-                                                    bot.sendMessage(startMsg.chat.id, `enter short ${buyPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${buyQuantity}, stop loss ${stoploss}`)
-                                                    console.log(`enter short ${buyPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${buyQuantity}, stop loss ${stoploss}`)
-                                                    buyArrayShort.push([buyPrice, buyTime, buyQuantity, stoploss])
-                                                    console.log('buyArrayShort:', buyArrayShort)
-                                                } else if (msg == 'failure') {
-                                                    console.log(`short buy order did not work at ${currentPrice} ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity}`)
-                                                }
-                                                keepTrying = false
-                                            } catch (e) {
-                                                console.error('Error when buying short ', e)
-                                                await wait(5000)
-                                                keepTrying = true
-                                            }
-                                        } while (keepTrying)
-                                    } else {
-                                        console.log('do not buy short since we entered too many times')
+                                let keepTrying
+                                do {
+                                    try {
+                                        await enterShort(buyArrayShort, Time, buyIndex)
+                                        keepTrying = false
+                                    } catch(e) {
+                                        console.error('ERROR WHEN ENTERING SHORT')
+                                        await wait(5000)
+                                        keepTrying = true
                                     }
-                                } else {
-                                    console.error('ERROR IN CALCULATE ENTER QUANTITY SHORT')
-                                }
+                                } while(keepTrying)
                             } else {
                                 console.log('already entered short here')
                             }
@@ -631,7 +718,7 @@ const main = async() => {
         //            !
         if (inputIndicators.psar[inputIndicators.psar.length-1] > inputIndicators.high[inputIndicators.high.length-1] && inputIndicators.psar[inputIndicators.psar.length-2] <= inputIndicators.low[inputIndicators.low.length-2]) {
             let TestTime = new Date().toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")
-            console.log('EXIT LONG INFO')
+            console.log('\n', 'EXIT LONG INFO')
             console.log(`PSAR long exit signal now at ${TestTime}`)
             if (buyArrayLong.length != 0) { // make sure we bought at least once
                 let prices
@@ -654,31 +741,14 @@ const main = async() => {
                 for (let arr of buyArrayLong) {
                     //console.log('for sell loop check')
                     let profit = (currentPrice/arr[0]-1) *100
-                    if(profit > 0) {
-                        console.log(`Selling long at ${Time}`)
+                    if(profit > 0) {      
                         let keepTrying
                         do {
                             try {
-    /*                             let msg = 'success'
-                                let sellQuantity = arr[2]
-                                let sellPrice = currentPrice
-                                let sellTime = Time
-                                let usdtAmount = 1300 */
-                                let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(arr[2], currentPrice, 'long')
-    
-                                if (msg == 'success') {
-                                    availableBalanceUSDT = availableBalanceUSDT + usdtAmount
-                                    bot.sendMessage(startMsg.chat.id, `exit long ${sellPrice} ${sellTime} amount ${sellQuantity}(buy ${arr[0]} at ${arr[1].toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${arr[2]})`)
-                                    console.log(`exit long at ${sellPrice} ${sellTime} amount ${sellQuantity}(buy ${arr[0]} at ${arr[1].toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${arr[2]})`)
-                                    statistics.push(`enter long ${arr[0]} at ${arr[1]} amount ${arr[2]}`)
-                                    statistics.push(`exit long ${sellPrice} at ${sellTime} amount ${sellQuantity}`)
-                                    let usdtProfit = arr[0]*arr[2]*((sellPrice/arr[0])-1)
-                                    statistics.push(`long profit ${profit}% ${usdtProfit}$`)
-                                    profits.push([profit, usdtProfit])
-                                } else if (msg == 'failure') {
-                                    notSoldArr.push([arr[0], arr[1], arr[2]])
-                                    console.log(`Exit long order did not work. Buy price ${arr[0]} at ${arr[1].toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} sell ${sellPrice} at ${Time}`)
-                                }   
+                                let {errorDidNotWork, notSold} = await exitLong(arr[0], arr[1], arr[2], arr[3], currentPrice, Time)
+                                if (notSold) {
+                                    notSoldArr.push(notSold)
+                                }
                                 keepTrying = false                         
                             } catch(e) {
                                 console.error('Error when exit long', e)
@@ -687,7 +757,7 @@ const main = async() => {
                             }
                         } while (keepTrying)
                     } else {
-                        notSoldArr.push([arr[0], arr[1], arr[2]])
+                        notSoldArr.push([arr[0], arr[1], arr[2], arr[3]])
                         console.log(`negative profit at long enter ${arr[0]} at ${arr[1].toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} long exit ${currentPrice} at ${Time}`)
                     }
                 }
@@ -703,7 +773,7 @@ const main = async() => {
         }
         ///stoploss logic long
         if(buyArrayLong.length != 0) {
-            console.log('STOPLOSS LONG INFO')
+            console.log('\n', 'STOPLOSS LONG INFO')
             let Time = new Date() 
             let notSoldArrAtStoploss = []
             for (let arr of buyArrayLong) {
@@ -721,33 +791,21 @@ const main = async() => {
                         keepTrying = true
                     }
                 } while (keepTrying)
-                if (arr[3] >= currentPrice && Time - arr[1] >= 5*60*1000) {
+                if (arr[3] >= currentPrice && Time - arr[1] >= 15*60*1000) {
                     //TEST
 /*                     let msg = 'success'
                     let sellQuantity = arr[2]
                     let sellTime = Time 
                     let sellPrice = currentPrice
                     let usdtAmount = 1300 */
+
                     let keepTrying
                     do {
                         try {
-                            let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(arr[2], currentPrice, 'long')
-        
-                            if (msg == 'success') {
-                                let profit = (sellPrice/arr[0]-1) *100
-                                let buyTime = arr[1].toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")
-                                sellTime = sellTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")
-                                console.log(`stop loss exit long ${sellPrice} ${sellTime}, amount ${sellQuantity}(enter ${arr[0]} at ${arr[1].toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${arr[2]})`)
-                                bot.sendMessage(startMsg.chat.id, `stop loss exit long ${sellPrice} ${sellTime} amount ${sellQuantity}(enter ${arr[0]} at ${arr[1].toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${arr[2]})`)
-                                statistics.push(`enter long ${arr[0]} at ${buyTime} amount ${arr[2]}`)
-                                statistics.push(`stop loss exit long ${sellPrice} at ${sellTime} amount ${sellQuantity}`)
-                                availableBalanceUSDT = availableBalanceUSDT + usdtAmount
-                                let usdtProfit = sellQuantity*sellPrice*((arr[0]/sellPrice)-1)
-                                statistics.push(`long loss (stoploss) ${profit}% ${usdtProfit}$`)
-                                profits.push([profit, usdtProfit])
-                            } else if (msg == 'failure') {
-                                notSoldArrAtStoploss.push([arr[0], arr[1], arr[2], arr[3]])
-                            } 
+                            let {errorDidNotWork, notSold} = await exitLong(arr[0], arr[1], arr[2], arr[3],currentPrice,Time)
+                            if (notSold) {
+                                notSoldArrAtStoploss.push(notSold)
+                            }
                             keepTrying = false    
                         } catch(e) {
                             console.error('Error when exit long at stoploss', e)
@@ -781,7 +839,7 @@ const main = async() => {
         //            !
         if (inputIndicators.psar[inputIndicators.psar.length-1] < inputIndicators.low[inputIndicators.low.length-1] && inputIndicators.psar[inputIndicators.psar.length-2] >= inputIndicators.high[inputIndicators.high.length-2]) {
             let TestTime = new Date().toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")
-            console.log('EXIT SHORT INFO')
+            console.log('\n', 'EXIT SHORT INFO')
             console.log(`PSAR short exit signal now at ${TestTime}`)
             if (buyArrayShort.length != 0) { // make sure we bought at least once
                 let prices
@@ -805,31 +863,14 @@ const main = async() => {
                     //console.log('for sell loop check')
                     let profit = (arr[0]/currentPrice-1) *100
                     if(profit > 0) {
-                        console.log(`Exiting short at ${Time}`)
                         let keepTrying
                         do {
                             try {
-    /*                             let msg = 'success'
-                                let sellQuantity = arr[2]
-                                let sellPrice = currentPrice
-                                let sellTime = Time
-                                let usdtAmount = 1300 */
-                                let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(arr[2], currentPrice, 'short')
-    
-                                if (msg == 'success') {
-                                    availableBalanceBTC = availableBalanceBTC + sellQuantity
-                                    bot.sendMessage(startMsg.chat.id, `exit short ${sellPrice} ${sellTime} amount ${sellQuantity}(buy ${arr[0]} at ${arr[1].toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${arr[2]})`)
-                                    console.log(`exit short ${sellPrice} ${sellTime} amount ${sellQuantity}(enter ${arr[0]} at ${arr[1].toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${arr[2]})`)
-                                    statistics.push(`enter short ${arr[0]} at ${arr[1]} amount ${arr[2]}`)
-                                    statistics.push(`exit short ${sellPrice} at ${sellTime} amount ${sellQuantity}`)
-                                    let usdtProfit = sellQuantity*sellPrice*((arr[0]/sellPrice)-1)
-                                    statistics.push(`short profit ${profit}% ${usdtProfit}$`)
-                                    profits.push([profit, usdtProfit])
-                                } else if (msg == 'failure') {
-                                    notSoldArr.push([arr[0], arr[1], arr[2], arr[3]])
-                                    console.log(`Exit short order did not work. Enter short ${arr[0]} at ${arr[1].toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} sell ${sellPrice} at ${Time}`)
+                                let {errorDidNotWork, notSold} = await exitShort(arr[0], arr[1], arr[2], arr[3], currentPrice, Time)
+                                if (notSold) {
+                                    notSoldArr.push(notSold)
                                 }
-                                keepTrying = false                           
+                                keepTrying = false
                             } catch(e) {
                                 console.error('Error when exit short', e)
                                 await wait(5000)
@@ -853,7 +894,7 @@ const main = async() => {
         }
         ///stoploss logic short
         if(buyArrayShort.length != 0) {
-            console.log(`STOPLOSS EXIT SHORT INFO`)
+            console.log('\n', `STOPLOSS EXIT SHORT INFO`)
             let Time = new Date() 
             let notSoldArrAtStoploss = []
             for (let arr of buyArrayShort) {
@@ -872,33 +913,14 @@ const main = async() => {
                     }
                 } while (keepTrying)
 
-                if (arr[3] <= currentPrice && Time - arr[1] >= 5*60*1000) {
-                    //TEST
-/*                     let msg = 'success'
-                    let sellQuantity = arr[2]
-                    let sellTime = Time 
-                    let sellPrice = currentPrice
-                    let usdtAmount = 1300 */
+                if (arr[3] <= currentPrice && Time - arr[1] >= 15*60*1000) {
                     let keepTrying
                     do {
                         try {
-                            let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(arr[2], currentPrice, 'short')
-        
-                            if (msg == 'success') {
-                                let profit = (arr[0]/sellPrice-1) *100
-                                let buyTime = arr[1].toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")
-                                sellTime = sellTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")
-                                console.log(`stop loss exit short ${sellPrice} ${sellTime} amount ${sellQuantity}(enter ${arr[0]} at ${arr[1].toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${arr[2]})`)
-                                bot.sendMessage(startMsg.chat.id, `stop loss exit short  ${sellPrice} ${sellTime} amount ${sellQuantity}(buy ${arr[0]} at ${arr[1].toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${arr[2]})`)
-                                statistics.push(`enter short ${arr[0]} at ${buyTime} amount ${arr[2]}`)
-                                statistics.push(`stop loss exit short ${sellPrice} at ${sellTime} amount ${sellQuantity}`)
-                                availableBalanceBTC = availableBalanceBTC + sellQuantity
-                                let usdtProfit = sellQuantity*sellPrice*((arr[0]/sellPrice)-1)
-                                statistics.push(`short loss (stoploss) ${profit}% ${usdtProfit}$`)
-                                profits.push([profit, usdtProfit])
-                            } else if (msg == 'failure') {
-                                notSoldArrAtStoploss.push([arr[0], arr[1], arr[2], arr[3]])
-                            } 
+                            let {errorDidNotWork, notSold}  = await exitShort(arr[0], arr[1], arr[2], arr[3], currentPrice, Time)
+                            if (notSold) {
+                                notSoldArrAtStoploss.push(notSold)
+                            }
                             keepTrying = false    
                         } catch(e) {
                             console.error('Error when exit short at stoploss', e)
@@ -913,7 +935,6 @@ const main = async() => {
                         stoploss = arr[0]
                         console.log(`replacing stoploss ${stoploss}`)
                     } else {
-                        console.log('not replacing stoploss')
                         stoploss = arr[3]
                     }
                     notSoldArrAtStoploss.push([arr[0], arr[1], arr[2], stoploss])
@@ -1070,3 +1091,114 @@ bot.onText(/\/clearunsold/, (msg) => {
     bot.sendMessage(msg.chat.id, `Cleared!`)
 });
 
+bot.onText(/\/enterlong/, async msg => {
+    let Time = new Date()
+    console.log('\n', 'ENTERING LONG MANUALLY')
+    let {errorDidNotWork, errorEnteredTooManyTimes, errorInCalculatingEnterQuantity} = await enterLong(buyArrayLong, Time)
+    if (errorDidNotWork) {
+        bot.sendMessage(msg.chat.id, `Order did not work`) 
+    }
+    if (errorEnteredTooManyTimes) {
+        bot.sendMessage(msg.chat.id, `Error! Entered too many times`) 
+    }
+    if (errorInCalculatingEnterQuantity) {
+        bot.sendMessage(msg.chat.id, `Error! Did not manage to calculate enter quantity`) 
+    }  
+});
+
+bot.onText(/\/entershort/, async msg => {
+    let Time = new Date()
+    console.log('\n', 'ENTERING SHORT MANUALLY')
+    let {errorDidNotWork, errorEnteredTooManyTimes, errorInCalculatingEnterQuantity} = await enterShort(buyArrayShort, Time)
+    if (errorDidNotWork) {
+        bot.sendMessage(msg.chat.id, `Order did not work`) 
+    }
+    if (errorEnteredTooManyTimes) {
+        bot.sendMessage(msg.chat.id, `Error! Entered too many times`) 
+    }
+    if (errorInCalculatingEnterQuantity) {
+        bot.sendMessage(msg.chat.id, `Error! Did not manage to calculate enter quantity`) 
+    }  
+});
+bot.onText(/\/exitlong/, async msg => {
+    if(buyArrayLong.length != 0) {
+        console.log('\n', 'SELLING LONG MANUALLY')
+        let Time = new Date() 
+        let notSoldArrManually = []
+        let error
+        for (let arr of buyArrayLong) {
+            let prices
+            let currentPrice
+            let keepTrying
+            do {
+                try {
+                    prices = await binanceClient.fetchTicker(ticker) 
+                    currentPrice = prices.last
+                    keepTrying = false
+                    let {errorDidNotWork, notSold} = await exitLong(arr[0], arr[1], arr[2], arr[3],currentPrice,Time)
+                    error = errorDidNotWork
+                    if (notSold) {
+                        notSoldArrManually.push(notSold)
+                    }                    
+                    keepTrying = false    
+                } catch(e) {
+                    console.error('Error when exit long at stoploss', e)
+                    await wait(5000)
+                    keepTrying = true
+                }
+            } while (keepTrying)
+        }
+        console.log('buy array long: ', buyArrayLong)
+        console.log('notSoldArrManually: ',notSoldArrManually)
+        if (notSoldArrManually.length < buyArrayLong.length) {
+            console.log('buyArrayLong was: ', buyArrayLong)
+            buyArrayLong = notSoldArrManually
+            console.log('NewbuyArrayLong is: ', buyArrayLong)   
+        }  
+        if(error) {
+            bot.sendMessage(msg.chat.id, `Exit long did not work`)  
+        }
+    } else {
+        bot.sendMessage(msg.chat.id, `We did not enter long yet`)  
+    }
+});
+bot.onText(/\/exitshort/, async msg => {
+    if(buyArrayShort.length != 0) {
+        console.log('\n', 'SELLING SHORT MANUALLY')
+        let Time = new Date() 
+        let notSoldArrManually = []
+        let error
+        for (let arr of buyArrayShort) {
+            let prices
+            let currentPrice
+            let keepTrying
+            do{
+                try {
+                    prices = await binanceClient.fetchTicker(ticker) 
+                    currentPrice = prices.last
+                    keepTrying = false
+                    let {errorDidNotWork, notSold}  = await exitShort(arr[0], arr[1], arr[2], arr[3], currentPrice, Time)
+                    if (notSold) {
+                        notSoldArrManually.push(notSold)
+                    }         
+                    error = errorDidNotWork
+                    keepTrying = false    
+                } catch(e) {
+                    console.error('Error when exit short at stoploss', e)
+                    await wait(5000)
+                    keepTrying = true
+                }
+            } while(keepTrying)
+        }
+        if (notSoldArrManually.length <= buyArrayShort.length) {
+        console.log('buyArrayShort was: ', buyArrayShort)
+        buyArrayShort = notSoldArrManually
+        console.log('NewBuyArrayShort is: ', buyArrayShort)
+        }
+        if(error) {
+            bot.sendMessage(msg.chat.id, `Exit short did not work`)  
+        }
+    } else {
+        bot.sendMessage(msg.chat.id, `We did not enter long yet`)  
+    }
+});
