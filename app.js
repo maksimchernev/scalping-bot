@@ -57,7 +57,7 @@ const initializeInputIndicators = async() => {
 } 
 
 const calculatePSAR = async() => {
-    tulind.indicators.psar.indicator([inputIndicators.high, inputIndicators.low],[0.03,0.2],(err,res) => {
+    tulind.indicators.psar.indicator([inputIndicators.high, inputIndicators.low],[0.025,0.2],(err,res) => {
         if(err) return console.log(err);
         inputIndicators.psar = res[0];
     })
@@ -963,7 +963,9 @@ bot.onText(/\/start/, (msg) => {
     if (!isStarted) {
         startMsg = msg
         isStarted = true
-        startTime = new Date()
+        if (!startTime) {
+            startTime = new Date()
+        }
         console.log(`Started at ${startTime}`)
         main()
         bot.sendMessage(msg.chat.id, "Running!")
@@ -1022,7 +1024,7 @@ bot.onText(/\/stop/, (msg) => {
         accumulatedProfitUSDT = 0
         for (let i = 0; i < profits.length; i++) {
             accumulatedProfit = accumulatedProfit+profits[i][0]
-            accumulatedProfitUSDT = accumulatedProfit+profits[i][1]
+            accumulatedProfitUSDT = accumulatedProfitUSDT+profits[i][1]
         }
         bot.sendMessage(msg.chat.id, ` Accumulated profit is: ${accumulatedProfit}% ${accumulatedProfitUSDT}$ from ${startTime} UTC`)
     } else {
@@ -1080,7 +1082,7 @@ bot.onText(/\/profit/, (msg) => {
     accumulatedProfitUSDT = 0
     for (let i = 0; i < profits.length; i++) {
         accumulatedProfit = accumulatedProfit+profits[i][0]
-        accumulatedProfitUSDT = accumulatedProfit+profits[i][1]
+        accumulatedProfitUSDT = accumulatedProfitUSDT+profits[i][1]
     }
     bot.sendMessage(msg.chat.id, ` Accumulated profit is: ${accumulatedProfit}%, ${accumulatedProfitUSDT} from ${startTime}`)
 });
