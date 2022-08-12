@@ -989,7 +989,7 @@ bot.onText(/\/start/, (msg) => {
             }
             console.log(`Started at ${startTime}`)
             run = true
-            //main()
+            main()
             bot.sendMessage(msg.chat.id, "Running!")
         } else {
             bot.sendMessage(msg.chat.id, "Already running")
