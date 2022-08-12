@@ -11,6 +11,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const token = process.env.TG_KEY;
 const bot = new TelegramBot(token, {polling: true});
 
+let allowedIds = [422689325, -797023226, 384569274]
 
 let startMsg
 const candleTypeRange = 5
@@ -962,30 +963,111 @@ bot.on("polling_error", console.log);
 
 let isStarted = null
 
+const checkPermission = (msg) => {
+    let allowedPerson
+    let allowedChat
+    for (let id of allowedIds) {
+        if (msg.chat.id === id) {
+            allowedChat = true
+        }
+        if (msg.from.id === id) {
+            allowedPerson = true
+        }
+    }
+    return {allowedPerson, allowedChat}
+}
 
 bot.onText(/\/start/, (msg) => {
-    if (!isStarted) {
-        startMsg = msg
-        isStarted = true
-        if (!startTime) {
-            startTime = new Date()
+    console.log(msg)
+    let {allowedPerson, allowedChat} = checkPermission(msg)
+    if (allowedChat && allowedPerson) {
+        if (!isStarted) {
+            startMsg = msg
+            isStarted = true
+            if (!startTime) {
+                startTime = new Date()
+            }
+            console.log(`Started at ${startTime}`)
+            run = true
+            //main()
+            bot.sendMessage(msg.chat.id, "Running!")
+        } else {
+            bot.sendMessage(msg.chat.id, "Already running")
         }
-        console.log(`Started at ${startTime}`)
-        run = true
-        main()
-        bot.sendMessage(msg.chat.id, "Running!")
     } else {
-        bot.sendMessage(msg.chat.id, "Already running")
+        bot.sendMessage(msg.chat.id, "You are not allowed to use this bot")
+        bot.sendMessage(422689325, `Some bitch with chatId ${msg.chat.id} fromId ${msg.from.id} tried to use the bot. Text ${msg.text}`)   
     }
+    
 });
 
 bot.onText(/\/stop/, (msg) => {
-    if (isStarted) {
-        isStarted = false
-        let stopTime = new Date()
-        console.log(`Stopped at ${stopTime}`)
-        run = false
-        bot.sendMessage(msg.chat.id, "Stopped!")
+    let {allowedPerson, allowedChat} = checkPermission(msg)
+    if (allowedChat && allowedPerson) {
+        if (isStarted) {
+            isStarted = false
+            let stopTime = new Date()
+            console.log(`Stopped at ${stopTime}`)
+            run = false
+            bot.sendMessage(msg.chat.id, "Stopped!")
+            if (statistics.length != 0) {
+                let statisticsJson = JSON.stringify(statistics, null, 2)
+                fs.writeFile('../statistics.json', statisticsJson, err => {
+                    if (err) {
+                        console.log('error witing statistics')
+                    } else {
+                        console.log('Successfully wrote statistics')
+                        bot.sendDocument(msg.chat.id, "../statistics.json")
+                    }
+                })
+            } else {
+                bot.sendMessage(msg.chat.id, `no statistics yet`)
+            }
+            if (buyArrayLong.length != 0) {
+                let unsoldLongJson = JSON.stringify(buyArrayLong, null, 2)
+                fs.writeFile('../unsoldLong.json', unsoldLongJson, err => {
+                    if (err) {
+                        console.log('error witing unsoldLong')
+                    } else {
+                        console.log('Successfully wrote unsold long')
+                        bot.sendDocument(msg.chat.id, "../unsoldLong.json")
+                    }
+                })
+            } else {
+                bot.sendMessage(msg.chat.id, `no unsold long yet`)
+            }
+            if (buyArrayShort.length != 0) {
+                let unsoldShortJson = JSON.stringify(buyArrayShort, null, 2)
+                fs.writeFile('../unsoldShort.json', unsoldShortJson, err => {
+                    if (err) {
+                        console.log('error witing unsoldShort')
+                    } else {
+                        console.log('Successfully wrote unsold short')
+                        bot.sendDocument(msg.chat.id, "../unsoldShort.json")
+                    }
+                })
+            } else {
+                bot.sendMessage(msg.chat.id, `no unsold short yet`)
+            }
+            accumulatedProfit = 0
+            accumulatedProfitUSDT = 0
+            for (let i = 0; i < profits.length; i++) {
+                accumulatedProfit = accumulatedProfit+profits[i][0]
+                accumulatedProfitUSDT = accumulatedProfitUSDT+profits[i][1]
+            }
+            bot.sendMessage(msg.chat.id, ` Accumulated profit is: ${accumulatedProfit}% ${accumulatedProfitUSDT}$ from ${startTime} UTC`)
+        } else {
+            bot.sendMessage(msg.chat.id, `Is not started yet`)
+        }
+    } else {
+        bot.sendMessage(msg.chat.id, "You are not allowed to use this bot")
+        bot.sendMessage(422689325, `Some bitch with chatId ${msg.chat.id} fromId ${msg.from.id} tried to use the bot. Text ${msg.text}`) 
+    }
+});
+
+bot.onText(/\/statistics/, (msg) => {
+    let {allowedPerson, allowedChat} = checkPermission(msg)
+    if (allowedChat && allowedPerson) {
         if (statistics.length != 0) {
             let statisticsJson = JSON.stringify(statistics, null, 2)
             fs.writeFile('../statistics.json', statisticsJson, err => {
@@ -999,6 +1081,15 @@ bot.onText(/\/stop/, (msg) => {
         } else {
             bot.sendMessage(msg.chat.id, `no statistics yet`)
         }
+    } else {
+        bot.sendMessage(msg.chat.id, "You are not allowed to use this bot")
+        bot.sendMessage(422689325, `Some bitch with chatId ${msg.chat.id} fromId ${msg.from.id} tried to use the bot. Text ${msg.text}`) 
+    }
+});
+
+bot.onText(/\/unsold/, (msg) => {
+    let {allowedPerson, allowedChat} = checkPermission(msg)
+    if (allowedChat && allowedPerson) {
         if (buyArrayLong.length != 0) {
             let unsoldLongJson = JSON.stringify(buyArrayLong, null, 2)
             fs.writeFile('../unsoldLong.json', unsoldLongJson, err => {
@@ -1009,7 +1100,7 @@ bot.onText(/\/stop/, (msg) => {
                     bot.sendDocument(msg.chat.id, "../unsoldLong.json")
                 }
             })
-        } else {
+        }  else {
             bot.sendMessage(msg.chat.id, `no unsold long yet`)
         }
         if (buyArrayShort.length != 0) {
@@ -1025,187 +1116,173 @@ bot.onText(/\/stop/, (msg) => {
         } else {
             bot.sendMessage(msg.chat.id, `no unsold short yet`)
         }
+    } else {
+        bot.sendMessage(msg.chat.id, "You are not allowed to use this bot")
+        bot.sendMessage(422689325, `Some bitch with chatId ${msg.chat.id} fromId ${msg.from.id} tried to use the bot. Text ${msg.text}`) 
+    }
+});
+
+bot.onText(/\/profit/, (msg) => {
+    let {allowedPerson, allowedChat} = checkPermission(msg)
+    if (allowedChat && allowedPerson) {
         accumulatedProfit = 0
         accumulatedProfitUSDT = 0
         for (let i = 0; i < profits.length; i++) {
             accumulatedProfit = accumulatedProfit+profits[i][0]
             accumulatedProfitUSDT = accumulatedProfitUSDT+profits[i][1]
         }
-        bot.sendMessage(msg.chat.id, ` Accumulated profit is: ${accumulatedProfit}% ${accumulatedProfitUSDT}$ from ${startTime} UTC`)
+        bot.sendMessage(msg.chat.id, ` Accumulated profit is: ${accumulatedProfit}%, ${accumulatedProfitUSDT} from ${startTime}`)
     } else {
-        bot.sendMessage(msg.chat.id, `Is not started yet`)
+        bot.sendMessage(msg.chat.id, "You are not allowed to use this bot")
+        bot.sendMessage(422689325, `Some bitch with chatId ${msg.chat.id} fromId ${msg.from.id} tried to use the bot. Text ${msg.text}`) 
     }
-});
-
-bot.onText(/\/statistics/, (msg) => {
-    if (statistics.length != 0) {
-        let statisticsJson = JSON.stringify(statistics, null, 2)
-        fs.writeFile('../statistics.json', statisticsJson, err => {
-            if (err) {
-                console.log('error witing statistics')
-            } else {
-                console.log('Successfully wrote statistics')
-                bot.sendDocument(msg.chat.id, "../statistics.json")
-            }
-        })
-    } else {
-        bot.sendMessage(msg.chat.id, `no statistics yet`)
-    }
-});
-
-bot.onText(/\/unsold/, (msg) => {
-    if (buyArrayLong.length != 0) {
-        let unsoldLongJson = JSON.stringify(buyArrayLong, null, 2)
-        fs.writeFile('../unsoldLong.json', unsoldLongJson, err => {
-            if (err) {
-                console.log('error witing unsoldLong')
-            } else {
-                console.log('Successfully wrote unsold long')
-                bot.sendDocument(msg.chat.id, "../unsoldLong.json")
-            }
-        })
-    }  else {
-        bot.sendMessage(msg.chat.id, `no unsold long yet`)
-    }
-    if (buyArrayShort.length != 0) {
-        let unsoldShortJson = JSON.stringify(buyArrayShort, null, 2)
-        fs.writeFile('../unsoldShort.json', unsoldShortJson, err => {
-            if (err) {
-                console.log('error witing unsoldShort')
-            } else {
-                console.log('Successfully wrote unsold short')
-                bot.sendDocument(msg.chat.id, "../unsoldShort.json")
-            }
-        })
-    } else {
-        bot.sendMessage(msg.chat.id, `no unsold short yet`)
-    }
-});
-
-bot.onText(/\/profit/, (msg) => {
-    accumulatedProfit = 0
-    accumulatedProfitUSDT = 0
-    for (let i = 0; i < profits.length; i++) {
-        accumulatedProfit = accumulatedProfit+profits[i][0]
-        accumulatedProfitUSDT = accumulatedProfitUSDT+profits[i][1]
-    }
-    bot.sendMessage(msg.chat.id, ` Accumulated profit is: ${accumulatedProfit}%, ${accumulatedProfitUSDT} from ${startTime}`)
 });
 
 bot.onText(/\/clearunsold/, (msg) => {
-    buyArrayShort = []
-    buyArrayLong = []
-    bot.sendMessage(msg.chat.id, `Cleared!`)
+    let {allowedPerson, allowedChat} = checkPermission(msg)
+    if (allowedChat && allowedPerson) {
+        buyArrayShort = []
+        buyArrayLong = []
+        bot.sendMessage(msg.chat.id, `Cleared!`)
+    } else {
+        bot.sendMessage(msg.chat.id, "You are not allowed to use this bot")
+        bot.sendMessage(422689325, `Some bitch with chatId ${msg.chat.id} fromId ${msg.from.id} tried to use the bot. Text ${msg.text}`) 
+
+    }
 });
 
 bot.onText(/\/enterlong/, async msg => {
-    let Time = new Date()
-    console.log('\n', 'ENTERING LONG MANUALLY')
-    let {errorDidNotWork, errorEnteredTooManyTimes, errorInCalculatingEnterQuantity} = await enterLong(buyArrayLong, Time)
-    if (errorDidNotWork) {
-        bot.sendMessage(msg.chat.id, `Order did not work`) 
+    let {allowedPerson, allowedChat} = checkPermission(msg)
+    if (allowedChat && allowedPerson) {
+        let Time = new Date()
+        console.log('\n', 'ENTERING LONG MANUALLY')
+        let {errorDidNotWork, errorEnteredTooManyTimes, errorInCalculatingEnterQuantity} = await enterLong(buyArrayLong, Time)
+        if (errorDidNotWork) {
+            bot.sendMessage(msg.chat.id, `Order did not work`) 
+        }
+        if (errorEnteredTooManyTimes) {
+            bot.sendMessage(msg.chat.id, `Error! Entered too many times`) 
+        }
+        if (errorInCalculatingEnterQuantity) {
+            bot.sendMessage(msg.chat.id, `Error! Did not manage to calculate enter quantity`) 
+        }  
+    } else {
+        bot.sendMessage(msg.chat.id, "You are not allowed to use this bot")
+        bot.sendMessage(422689325, `Some bitch with chatId ${msg.chat.id} fromId ${msg.from.id} tried to use the bot. Text ${msg.text}`) 
     }
-    if (errorEnteredTooManyTimes) {
-        bot.sendMessage(msg.chat.id, `Error! Entered too many times`) 
-    }
-    if (errorInCalculatingEnterQuantity) {
-        bot.sendMessage(msg.chat.id, `Error! Did not manage to calculate enter quantity`) 
-    }  
 });
 
 bot.onText(/\/entershort/, async msg => {
-    let Time = new Date()
-    console.log('\n', 'ENTERING SHORT MANUALLY')
-    let {errorDidNotWork, errorEnteredTooManyTimes, errorInCalculatingEnterQuantity} = await enterShort(buyArrayShort, Time)
-    if (errorDidNotWork) {
-        bot.sendMessage(msg.chat.id, `Order did not work`) 
+    let {allowedPerson, allowedChat} = checkPermission(msg)
+    if (allowedChat && allowedPerson) {
+        let Time = new Date()
+        console.log('\n', 'ENTERING SHORT MANUALLY')
+        let {errorDidNotWork, errorEnteredTooManyTimes, errorInCalculatingEnterQuantity} = await enterShort(buyArrayShort, Time)
+        if (errorDidNotWork) {
+            bot.sendMessage(msg.chat.id, `Order did not work`) 
+        }
+        if (errorEnteredTooManyTimes) {
+            bot.sendMessage(msg.chat.id, `Error! Entered too many times`) 
+        }
+        if (errorInCalculatingEnterQuantity) {
+            bot.sendMessage(msg.chat.id, `Error! Did not manage to calculate enter quantity`) 
+        }  
+    } else {
+        bot.sendMessage(msg.chat.id, "You are not allowed to use this bot")
+        bot.sendMessage(422689325, `Some bitch with chatId ${msg.chat.id} fromId ${msg.from.id} tried to use the bot. Text ${msg.text}`) 
     }
-    if (errorEnteredTooManyTimes) {
-        bot.sendMessage(msg.chat.id, `Error! Entered too many times`) 
-    }
-    if (errorInCalculatingEnterQuantity) {
-        bot.sendMessage(msg.chat.id, `Error! Did not manage to calculate enter quantity`) 
-    }  
 });
 bot.onText(/\/exitlong/, async msg => {
-    if(buyArrayLong.length != 0) {
-        console.log('\n', 'SELLING LONG MANUALLY')
-        let Time = new Date() 
-        let notSoldArrManually = []
-        let error
-        for (let arr of buyArrayLong) {
-            let prices
-            let currentPrice
-            let keepTrying
-            do {
-                try {
-                    prices = await binanceClient.fetchTicker(ticker) 
-                    currentPrice = prices.last
-                    keepTrying = false
-                    let {errorDidNotWork, notSold} = await exitLong(arr[0], arr[1], arr[2], arr[3],currentPrice,Time)
-                    error = errorDidNotWork
-                    if (notSold) {
-                        notSoldArrManually.push(notSold)
-                    }                    
-                    keepTrying = false    
-                } catch(e) {
-                    console.error('Error when exit long at stoploss', e)
-                    await wait(5000)
-                    keepTrying = true
-                }
-            } while (keepTrying)
-        }
-        console.log('buy array long: ', buyArrayLong)
-        console.log('notSoldArrManually: ',notSoldArrManually)
-        if (notSoldArrManually.length < buyArrayLong.length) {
-            console.log('buyArrayLong was: ', buyArrayLong)
-            buyArrayLong = notSoldArrManually
-            console.log('NewbuyArrayLong is: ', buyArrayLong)   
-        }  
-        if(error) {
-            bot.sendMessage(msg.chat.id, `Exit long did not work`)  
+    let {allowedPerson, allowedChat} = checkPermission(msg)
+    if (allowedChat && allowedPerson) {
+        if(buyArrayLong.length != 0) {
+            console.log('\n', 'SELLING LONG MANUALLY')
+            let Time = new Date() 
+            let notSoldArrManually = []
+            let error
+            for (let arr of buyArrayLong) {
+                let prices
+                let currentPrice
+                let keepTrying
+                do {
+                    try {
+                        prices = await binanceClient.fetchTicker(ticker) 
+                        currentPrice = prices.last
+                        keepTrying = false
+                        let {errorDidNotWork, notSold} = await exitLong(arr[0], arr[1], arr[2], arr[3],currentPrice,Time)
+                        error = errorDidNotWork
+                        if (notSold) {
+                            notSoldArrManually.push(notSold)
+                        }                    
+                        keepTrying = false    
+                    } catch(e) {
+                        console.error('Error when exit long at stoploss', e)
+                        await wait(5000)
+                        keepTrying = true
+                    }
+                } while (keepTrying)
+            }
+            console.log('buy array long: ', buyArrayLong)
+            console.log('notSoldArrManually: ',notSoldArrManually)
+            if (notSoldArrManually.length < buyArrayLong.length) {
+                console.log('buyArrayLong was: ', buyArrayLong)
+                buyArrayLong = notSoldArrManually
+                console.log('NewbuyArrayLong is: ', buyArrayLong)   
+            }  
+            if(error) {
+                bot.sendMessage(msg.chat.id, `Exit long did not work`)  
+            }
+        } else {
+            bot.sendMessage(msg.chat.id, `We did not enter long yet`)  
         }
     } else {
-        bot.sendMessage(msg.chat.id, `We did not enter long yet`)  
+        bot.sendMessage(msg.chat.id, "You are not allowed to use this bot")
+        bot.sendMessage(422689325, `Some bitch with chatId ${msg.chat.id} fromId ${msg.from.id} tried to use the bot. Text ${msg.text}`)  
     }
 });
 bot.onText(/\/exitshort/, async msg => {
-    if(buyArrayShort.length != 0) {
-        console.log('\n', 'SELLING SHORT MANUALLY')
-        let Time = new Date() 
-        let notSoldArrManually = []
-        let error
-        for (let arr of buyArrayShort) {
-            let prices
-            let currentPrice
-            let keepTrying
-            do{
-                try {
-                    prices = await binanceClient.fetchTicker(ticker) 
-                    currentPrice = prices.last
-                    keepTrying = false
-                    let {errorDidNotWork, notSold}  = await exitShort(arr[0], arr[1], arr[2], arr[3], currentPrice, Time)
-                    if (notSold) {
-                        notSoldArrManually.push(notSold)
-                    }         
-                    error = errorDidNotWork
-                    keepTrying = false    
-                } catch(e) {
-                    console.error('Error when exit short at stoploss', e)
-                    await wait(5000)
-                    keepTrying = true
-                }
-            } while(keepTrying)
-        }
-        if (notSoldArrManually.length <= buyArrayShort.length) {
-        console.log('buyArrayShort was: ', buyArrayShort)
-        buyArrayShort = notSoldArrManually
-        console.log('NewBuyArrayShort is: ', buyArrayShort)
-        }
-        if(error) {
-            bot.sendMessage(msg.chat.id, `Exit short did not work`)  
+    let {allowedPerson, allowedChat} = checkPermission(msg)
+        if (allowedChat && allowedPerson) {
+        if(buyArrayShort.length != 0) {
+            console.log('\n', 'SELLING SHORT MANUALLY')
+            let Time = new Date() 
+            let notSoldArrManually = []
+            let error
+            for (let arr of buyArrayShort) {
+                let prices
+                let currentPrice
+                let keepTrying
+                do{
+                    try {
+                        prices = await binanceClient.fetchTicker(ticker) 
+                        currentPrice = prices.last
+                        keepTrying = false
+                        let {errorDidNotWork, notSold}  = await exitShort(arr[0], arr[1], arr[2], arr[3], currentPrice, Time)
+                        if (notSold) {
+                            notSoldArrManually.push(notSold)
+                        }         
+                        error = errorDidNotWork
+                        keepTrying = false    
+                    } catch(e) {
+                        console.error('Error when exit short at stoploss', e)
+                        await wait(5000)
+                        keepTrying = true
+                    }
+                } while(keepTrying)
+            }
+            if (notSoldArrManually.length <= buyArrayShort.length) {
+            console.log('buyArrayShort was: ', buyArrayShort)
+            buyArrayShort = notSoldArrManually
+            console.log('NewBuyArrayShort is: ', buyArrayShort)
+            }
+            if(error) {
+                bot.sendMessage(msg.chat.id, `Exit short did not work`)  
+            }
+        } else {
+            bot.sendMessage(msg.chat.id, `We did not enter long yet`)  
         }
     } else {
-        bot.sendMessage(msg.chat.id, `We did not enter long yet`)  
+        bot.sendMessage(msg.chat.id, "You are not allowed to use this bot")
+        bot.sendMessage(422689325, `Some bitch with chatId ${msg.chat.id} fromId ${msg.from.id} tried to use the bot. Text ${msg.text}`) 
     }
 });
