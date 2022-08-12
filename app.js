@@ -1,4 +1,6 @@
 'use srtict'
+process.env.NTBA_FIX_319 = 1;
+process.env.NTBA_FIX_350 = 1;
 const tulind = require('tulind');
 let path = require('path');
 const ccxt = require ('ccxt');
@@ -42,6 +44,8 @@ const sync = async () => {
 }
 
 const initializeInputIndicators = async() => {
+    let time = new Date().toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")
+    console.log(`Updating at ${time}`);
     let candles = await binanceClient.fetchOHLCV(ticker,candleTypeRange+'m')
     inputIndicators.open = candles.map(arr => arr[1])
     inputIndicators.high = candles.map(arr => arr[2])
@@ -376,7 +380,7 @@ const sell = async (exitQuantity, currentPrice, direction) => {
     return {msg, sellQuantity, sellPrice, sellTime, usdtAmount};
 }
 
-let run = true
+let run
 let statistics = []
 let buyArrayLong = []
 let buyArrayShort = []
@@ -967,6 +971,7 @@ bot.onText(/\/start/, (msg) => {
             startTime = new Date()
         }
         console.log(`Started at ${startTime}`)
+        run = true
         main()
         bot.sendMessage(msg.chat.id, "Running!")
     } else {
