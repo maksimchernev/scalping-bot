@@ -618,8 +618,12 @@ const main = async() => {
         //            !
         // Enter long !
         //            !
-
-        if (!beingExecutedEnterLong) {
+        let emaRange = inputIndicators.ema.slice(inputIndicators.ema.length-18, inputIndicators.ema.length)
+        let minEma = Math.min.apply(Math, emaRange)    
+        let maxEma = Math.max.apply(Math, emaRange)   
+        let isFlat = Math.abs(minEma - maxEma) < 4
+        console.log('isFlat: ', isFlat)
+        if (!beingExecutedEnterLong && !isFlat) {
             (async function() {
                 console.log('\n', 'ENTER LONG INFO')
                 let buyIndex
@@ -734,7 +738,7 @@ const main = async() => {
         //             !
         // ENTER short !
         //             !
-        if (!beingExecutedEnterShort) {
+        if (!beingExecutedEnterShort && !isFlat) {
             (async function() {
                 console.log('\n', 'ENTER SHORT INFO')
                 let buyIndex
