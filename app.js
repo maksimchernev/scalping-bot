@@ -526,7 +526,7 @@ const exitLong = async (buyPrice, buyTime, buyQuantity, stoploss, takeProfit, cu
     let errorDidNotWork
     console.log(`Exiting long at ${currentTime}`)
     let notSold
-    //let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(buyQuantity, currentPrice, 'long')
+    let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(buyQuantity, currentPrice, 'long')
 
     if (msg == 'success') {
         errorDidNotWork = false
@@ -554,7 +554,7 @@ const exitShort = async (buyPrice, buyTime, buyQuantity, stoploss, takeProfit, c
     let errorDidNotWork
     console.log(`Exiting short at ${currentTime}`)
     let notSold
-    //let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(buyQuantity, currentPrice, 'short')
+    let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(buyQuantity, currentPrice, 'short')
 
     if (msg == 'success') {
         errorDidNotWork = false
