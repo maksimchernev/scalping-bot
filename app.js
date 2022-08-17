@@ -700,16 +700,17 @@ const main = async() => {
                             if (currentPrice > inputIndicators.psar[buyIndex-1-1]) {
                                 console.log('Прострел LONG!')
                                 confirmationPenetration = confirmationPenetration + 1
+                                if (i == 0) {
+                                    beingExecutedEnterLong = true
+                                    let timeLeft = await binanceClient.fetchTime();
+                                    timeLeft = 299000 - (timeLeft%300000)
+                                    await wait(timeLeft)
+                                } else {
+                                    beingExecutedEnterLong = false
+                                }
                             } else {
                                 console.log('Нет прострела LONG')
-                            }
-                            if (i == 0) {
-                                beingExecutedEnterLong = true
-                                let timeLeft = await binanceClient.fetchTime();
-                                timeLeft = 299000 - (timeLeft%300000)
-                                await wait(timeLeft)
-                            } else {
-                                beingExecutedEnterLong = false
+                                break
                             }
                         }
                         if (confirmationPenetration == 2) {
@@ -816,17 +817,19 @@ const main = async() => {
                             if (currentPrice < inputIndicators.psar[buyIndex-1-1]) {
                                 console.log('Прострел SHORT!')
                                 confirmationPenetration = confirmationPenetration + 1
+                                if (i == 0) {
+                                    beingExecutedEnterShort = true
+                                    let timeLeft = await binanceClient.fetchTime();
+                                    timeLeft = 299000 - (timeLeft%300000)
+                                    await wait(timeLeft)
+                                } else {
+                                    beingExecutedEnterShort = false
+                                }
                             } else {
                                 console.log('Нет прострела SHORT')
+                                break
                             }
-                            if (i == 0) {
-                                beingExecutedEnterShort = true
-                                let timeLeft = await binanceClient.fetchTime();
-                                timeLeft = 299000 - (timeLeft%300000)
-                                await wait(timeLeft)
-                            } else {
-                                beingExecutedEnterShort = false
-                            }
+                            
                         }
                         if (confirmationPenetration == 2) {
                             console.log('Confirmed прострел SHORT!')
