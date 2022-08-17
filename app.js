@@ -960,12 +960,11 @@ const main = async() => {
                 } else {
                     console.log('did not hit stoploss')
                     let stoploss
-                    if (currentPrice - arr[0] > 55) {
+                    if (currentPrice - arr[0] > 55 && arr[3] != arr[0]) {
                         stoploss = arr[0]
                         bot.sendMessage(startMsg.chat.id, `replacing stoploss for ${arr[0]}, ${arr[1].toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${arr[2]}, stoploss ${stoploss}, takeProfit ${arr[4]}`)
                         console.log(`replacing stoploss ${stoploss}`)
                     } else {
-                        console.log('not replacing stoploss')
                         stoploss = arr[3]
                     }
                     notSoldArrAtStoploss.push([arr[0], arr[1], arr[2], stoploss, arr[4]])
@@ -1075,7 +1074,7 @@ const main = async() => {
                 } else {
                     console.log('did not hit stoploss')
                     let stoploss
-                    if (arr[0] - currentPrice > 55) {
+                    if (arr[0] - currentPrice > 55 && arr[3] != arr[0]) {
                         stoploss = arr[0]
                         console.log(`replacing stoploss ${stoploss}`)
                         bot.sendMessage(startMsg.chat.id, `replacing stoploss for ${arr[0]}, ${arr[1].toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")}, amount ${arr[2]}, stoploss ${stoploss}, takeProfit ${arr[4]}`)
@@ -1442,7 +1441,7 @@ bot.onText(/\/exitshort/, async msg => {
                 bot.sendMessage(msg.chat.id, `Exit short did not work`)  
             }
         } else {
-            bot.sendMessage(msg.chat.id, `We did not enter long yet`)  
+            bot.sendMessage(msg.chat.id, `We did not enter short yet`)  
         }
     } else {
         bot.sendMessage(msg.chat.id, "You are not allowed to use this bot")
