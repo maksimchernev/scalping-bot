@@ -477,9 +477,9 @@ const enterShort = async (currentPrice, buyArrayShort, Time, buyIndex) => {
 
                 let stoploss
                 if (inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice > 180) {
-                    stoploss = buyPrice - ((inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice) *0.5)
+                    stoploss = buyPrice + ((inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice) *0.5)
                 } else if (inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice > 100) {
-                    stoploss = buyPrice - ((inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice) *0.75)
+                    stoploss = buyPrice + ((inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice) *0.75)
                 } else if (inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice < 0) {
                     stoploss = buyPrice + 100
                 } else if (inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice < 50) {
