@@ -17,9 +17,9 @@ let allowedIds = [422689325, -797023226, 384569274]
 
 let startMsg
 const candleTypeRange = 5
-const ticker = 'BTC/USDT'
-let availableBalanceUSDT = 1300
-let availableBalanceBTC = 0.059
+const ticker = 'BTC/BUSD'
+let availableBalanceBUSD = 2300
+let availableBalanceBTC = 0.1
 
 const binanceClient = new ccxt.binance({
     apiKey: process.env.API_KEY,
@@ -97,7 +97,7 @@ const calculateEnterQuantity = async (currentPrice, buyArray, Time, direction) =
     if (direction == 'long') {
         currentPrice = 0.9999*currentPrice;
         if (recentBuyArray.length == 0){
-            enterQuantity = availableBalanceUSDT
+            enterQuantity = availableBalanceBUSD
         } else {
             enterQuantity = 0
         }
@@ -149,7 +149,7 @@ const waitBuyOrderCompletion = async (direction) => {
     let buyPrice
     let buyTime
     let msg
-    let usdtAmount
+    let busdAmount
     if (direction == 'long') {
         console.log('WAITING BUY LONG ORDER COMPLETION');
         for(let i = 0; i < 7; i++){
@@ -159,10 +159,10 @@ const waitBuyOrderCompletion = async (direction) => {
                 console.log('LONG ORDER PURCHASE COMPLETE! \n');
                 buyQuantity = buyLongOrderInfo.amount
                 buyPrice = buyLongOrderInfo.average
-                usdtAmount = buyLongOrderInfo.cost
+                busdAmount = buyLongOrderInfo.cost
                 buyTime = new Date()
                 msg = 'success'
-                return {msg, buyQuantity, buyPrice, buyTime, usdtAmount};
+                return {msg, buyQuantity, buyPrice, buyTime, busdAmount};
             }
             console.log('long order waiting...')
             await wait(ORDER_UPDATE_PERIOD);
@@ -177,7 +177,7 @@ const waitBuyOrderCompletion = async (direction) => {
         }
         buyLongOrderInfo = await binanceClient.fetchOrder(buyLongOrderInfo.id, ticker)
         if (buyLongOrderInfo.status === 'canceled') {
-            usdtAmount = null
+            busdAmount = null
             buyQuantity = null
             buyPrice = null
             buyTime = new Date()
@@ -186,11 +186,11 @@ const waitBuyOrderCompletion = async (direction) => {
             console.log('LONG ORDER PURCHASE COMPLETE AT DOUBLE CHECK! \n');
             buyQuantity = buyLongOrderInfo.amount
             buyPrice = buyLongOrderInfo.average
-            usdtAmount = buyLongOrderInfo.cost
+            busdAmount = buyLongOrderInfo.cost
             buyTime = new Date()
             msg = 'success'
         }
-        return {msg, buyQuantity, buyPrice, buyTime, usdtAmount};
+        return {msg, buyQuantity, buyPrice, buyTime, busdAmount};
 
     } else if (direction == 'short') {
         console.log('WAITING BUY SHORT ORDER COMPLETION');
@@ -201,10 +201,10 @@ const waitBuyOrderCompletion = async (direction) => {
                 console.log('SHORT ORDER PURCHASE COMPLETE! \n');
                 buyQuantity = buyShortOrderInfo.amount
                 buyPrice = buyShortOrderInfo.average
-                usdtAmount = buyShortOrderInfo.cost
+                busdAmount = buyShortOrderInfo.cost
                 buyTime = new Date()
                 msg = 'success'
-                return {msg, buyQuantity, buyPrice, buyTime, usdtAmount};
+                return {msg, buyQuantity, buyPrice, buyTime, busdAmount};
             }
             console.log('short order waiting...')
             await wait(ORDER_UPDATE_PERIOD);
@@ -219,7 +219,7 @@ const waitBuyOrderCompletion = async (direction) => {
         }
         buyShortOrderInfo = await binanceClient.fetchOrder(buyShortOrderInfo.id, ticker)
         if (buyShortOrderInfo.status === 'canceled') {
-            usdtAmount = null
+            busdAmount = null
             buyQuantity = null
             buyPrice = null
             buyTime = new Date()
@@ -228,19 +228,19 @@ const waitBuyOrderCompletion = async (direction) => {
             console.log('SHORT ORDER PURCHASE COMPLETE AT DOUBLE CHECK! \n');
             buyQuantity = buyShortOrderInfo.amount
             buyPrice = buyShortOrderInfo.average
-            usdtAmount = buyShortOrderInfo.cost
+            busdAmount = buyShortOrderInfo.cost
             buyTime = new Date()
             msg = 'success'
         }
-        return {msg, buyQuantity, buyPrice, buyTime, usdtAmount};
+        return {msg, buyQuantity, buyPrice, buyTime, busdAmount};
     } else {
         console.log('unknown direction')
-        usdtAmount = null
+        busdAmount = null
         buyQuantity = null
         buyPrice = null
         buyTime = new Date()
         msg = 'failure'
-        return {msg, buyQuantity, buyPrice, buyTime, usdtAmount};
+        return {msg, buyQuantity, buyPrice, buyTime, busdAmount};
     }
  	
 }
@@ -248,8 +248,8 @@ const waitBuyOrderCompletion = async (direction) => {
 const buy = async (enterQuantity, currentPrice, direction) => {
 	console.log('BUYING');     
 	await makeBuyOrder(enterQuantity, currentPrice, direction);
-	let {msg, buyQuantity, buyPrice, buyTime, usdtAmount} = await waitBuyOrderCompletion(direction);
-	return {msg, buyQuantity, buyPrice, buyTime, usdtAmount};
+	let {msg, buyQuantity, buyPrice, buyTime, busdAmount} = await waitBuyOrderCompletion(direction);
+	return {msg, buyQuantity, buyPrice, buyTime, busdAmount};
 }
 
 const makeSellOrder = async (sellQuantity, currentPrice, direction) => {
@@ -271,7 +271,7 @@ const waitSellOrderCompletion = async (direction) => {
     let sellTime
     let sellQuantity
     let sellPrice
-    let usdtAmount
+    let busdAmount
     if (direction == 'long') {
         console.log('WAITING LONG EXIT ORDER COMPLETION');
         for(let i = 0; i < 7; i++){
@@ -281,10 +281,10 @@ const waitSellOrderCompletion = async (direction) => {
                 console.log('LONG EXIT COMPLETE! \n');
                 sellQuantity = sellLongOrderInfo.amount
                 sellPrice = sellLongOrderInfo.average
-                usdtAmount = sellLongOrderInfo.cost
+                busdAmount = sellLongOrderInfo.cost
                 sellTime = new Date()
                 msg = 'success'
-                return {msg, sellQuantity, sellPrice, sellTime, usdtAmount};
+                return {msg, sellQuantity, sellPrice, sellTime, busdAmount};
             }
             console.log('waiting...')
             await wait(ORDER_UPDATE_PERIOD);
@@ -299,7 +299,7 @@ const waitSellOrderCompletion = async (direction) => {
         }
         sellLongOrderInfo = await binanceClient.fetchOrder(sellLongOrderInfo.id, ticker)
         if (sellLongOrderInfo.status === 'canceled') {
-            usdtAmount = null
+            busdAmount = null
             sellQuantity = null
             sellPrice = null
             sellTime = new Date()
@@ -308,11 +308,11 @@ const waitSellOrderCompletion = async (direction) => {
             console.log('LONG ORDER EXIT COMPLETE AT DOUBLE CHECK! \n');
             sellQuantity = sellLongOrderInfo.amount
             sellPrice = sellLongOrderInfo.average
-            usdtAmount = sellLongOrderInfo.cost
+            busdAmount = sellLongOrderInfo.cost
             sellTime = new Date()
             msg = 'success'
         }
-        return {msg, sellQuantity, sellPrice, sellTime, usdtAmount};
+        return {msg, sellQuantity, sellPrice, sellTime, busdAmount};
 
     } else if (direction == 'short') {
         console.log('WAITING SHORT EXIT ORDER COMPLETION');
@@ -321,12 +321,12 @@ const waitSellOrderCompletion = async (direction) => {
             console.log('status', sellShortOrderInfo.status)
             if(sellShortOrderInfo.status === 'closed'){
                 console.log('SHORT EXIT COMPLETE! \n');
-                usdtAmount = sellShortOrderInfo.cost
+                busdAmount = sellShortOrderInfo.cost
                 sellQuantity = sellShortOrderInfo.amount
                 sellPrice = sellShortOrderInfo.average
                 sellTime = new Date()
                 msg = 'success'
-                return {msg, sellQuantity, sellPrice, sellTime, usdtAmount};
+                return {msg, sellQuantity, sellPrice, sellTime, busdAmount};
             }
             console.log('waiting...')
             await wait(ORDER_UPDATE_PERIOD);
@@ -341,7 +341,7 @@ const waitSellOrderCompletion = async (direction) => {
         }
         sellShortOrderInfo = await binanceClient.fetchOrder(sellShortOrderInfo.id, ticker)
         if (sellShortOrderInfo.status === 'canceled') {
-            usdtAmount = null
+            busdAmount = null
             sellQuantity = null
             sellPrice = null
             sellTime = new Date()
@@ -350,27 +350,27 @@ const waitSellOrderCompletion = async (direction) => {
             console.log('SHORT ORDER EXIT COMPLETE AT DOUBLE CHECK! \n');
             sellQuantity = sellShortOrderInfo.amount
             sellPrice = sellShortOrderInfo.average
-            usdtAmount = sellShortOrderInfo.cost
+            busdAmount = sellShortOrderInfo.cost
             sellTime = new Date()
             msg = 'success'
         }
-        return {msg, sellQuantity, sellPrice, sellTime, usdtAmount};
+        return {msg, sellQuantity, sellPrice, sellTime, busdAmount};
     } else {
         console.log('unknown direction')
-        usdtAmount = null
+        busdAmount = null
         sellQuantity = null
         sellPrice = null
         sellTime = new Date()
         msg = 'failure'
-        return {msg, sellQuantity, sellPrice, sellTime, usdtAmount};
+        return {msg, sellQuantity, sellPrice, sellTime, busdAmount};
     }
 }
 
 const sell = async (exitQuantity, currentPrice, direction) => {
     console.log('SELLING!');     
     await makeSellOrder(exitQuantity, currentPrice, direction);
-    let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await waitSellOrderCompletion(direction);
-    return {msg, sellQuantity, sellPrice, sellTime, usdtAmount};
+    let {msg, sellQuantity, sellPrice, sellTime, busdAmount} = await waitSellOrderCompletion(direction);
+    return {msg, sellQuantity, sellPrice, sellTime, busdAmount};
 }
 
 let run
@@ -380,14 +380,14 @@ let buyArrayShort = []
 let profits = []
 let startTime
 let accumulatedProfit = 0
-let accumulatedProfitUSDT = 0
+let accumulatedProfitBUSD = 0
 
 const enterLong = async (currentPrice, buyArrayLong, Time, buyIndex) => {
     let errorDidNotWork
     let errorEnteredTooManyTimes
     let errorInCalculatingEnterQuantity
     console.log(`Buying long... At ${Time}`)                     
-    let enterQuantity = await calculateEnterQuantity(currentPrice, buyArrayLong, Time, 'long')//in USDT
+    let enterQuantity = await calculateEnterQuantity(currentPrice, buyArrayLong, Time, 'long')//in BUSD
     //case error in calculate enter quantity
     if (enterQuantity != undefined && currentPrice != undefined) {
         errorInCalculatingEnterQuantity = false
@@ -398,12 +398,12 @@ const enterLong = async (currentPrice, buyArrayLong, Time, buyIndex) => {
             let buyQuantity = enterQuantity
             let buyPrice = currentPrice
             let buyTime = Time
-            let usdtAmount = 1300 */
+            let busdAmount = 1300 */
             errorEnteredTooManyTimes = false 
-            let {msg, buyQuantity, buyPrice, buyTime, usdtAmount} = await buy(enterQuantity, currentPrice, 'long')
+            let {msg, buyQuantity, buyPrice, buyTime, busdAmount} = await buy(enterQuantity, currentPrice, 'long')
             if (msg === 'success') {
                 errorDidNotWork = false
-                availableBalanceUSDT = availableBalanceUSDT - usdtAmount
+                availableBalanceBUSD = availableBalanceBUSD - busdAmount
                 console.log(' ')
                 let stoploss
             
@@ -468,8 +468,8 @@ const enterShort = async (currentPrice, buyArrayShort, Time, buyIndex) => {
             let buyQuantity = enterQuantity
             let buyPrice = currentPrice
             let buyTime = Time
-            let usdtAmount = 1300  */
-            let {msg, buyQuantity, buyPrice, buyTime, usdtAmount} = await buy(enterQuantity, currentPrice, 'short')
+            let busdAmount = 1300  */
+            let {msg, buyQuantity, buyPrice, buyTime, busdAmount} = await buy(enterQuantity, currentPrice, 'short')
             if (msg == 'success') {
                 errorDidNotWork = false
                 availableBalanceBTC = availableBalanceBTC - buyQuantity
@@ -528,23 +528,23 @@ const exitLong = async (buyPrice, buyTime, buyQuantity, stoploss, takeProfit, cu
     let sellQuantity = buyQuantity
     let sellPrice = currentPrice
     let sellTime = currentTime
-    let usdtAmount = 1300   */
+    let busdAmount = 1300   */
 
     let errorDidNotWork
     console.log(`Exiting long at ${currentTime}`)
     let notSold
-    let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(buyQuantity, currentPrice, 'long')
+    let {msg, sellQuantity, sellPrice, sellTime, busdAmount} = await sell(buyQuantity, currentPrice, 'long')
 
     if (msg == 'success') {
         errorDidNotWork = false
-        availableBalanceUSDT = availableBalanceUSDT + usdtAmount
+        availableBalanceBUSD = availableBalanceBUSD + busdAmount
         bot.sendMessage(startMsg.chat.id, `exit long ${sellPrice} ${sellTime} amount ${sellQuantity}(buy ${buyPrice} at ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity})`)
         console.log(`exit long ${sellPrice} ${sellTime} amount ${sellQuantity}(buy ${buyPrice} at ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity})`)
         let profit = (sellPrice/buyPrice-1) *100
-        let usdtProfit = buyPrice*buyQuantity*((sellPrice/buyPrice)-1)
+        let busdProfit = buyPrice*buyQuantity*((sellPrice/buyPrice)-1)
         let type = 'long'
-        statistics.push({type, buyPrice, buyTime, buyQuantity, sellPrice, sellTime, sellQuantity, profit, usdtProfit})
-        profits.push([profit, usdtProfit])
+        statistics.push({type, buyPrice, buyTime, buyQuantity, sellPrice, sellTime, sellQuantity, profit, busdProfit})
+        profits.push([profit, busdProfit])
     } else if (msg == 'failure') {
         errorDidNotWork = true
         notSold = [buyPrice, buyTime, buyQuantity, stoploss, takeProfit]
@@ -557,12 +557,12 @@ const exitShort = async (buyPrice, buyTime, buyQuantity, stoploss, takeProfit, c
     let sellQuantity = buyQuantity
     let sellPrice = currentPrice
     let sellTime = currentTime
-    let usdtAmount = 1300   */
+    let busdAmount = 1300   */
 
     let errorDidNotWork
     console.log(`Exiting short at ${currentTime}`)
     let notSold
-    let {msg, sellQuantity, sellPrice, sellTime, usdtAmount} = await sell(buyQuantity, currentPrice, 'short')
+    let {msg, sellQuantity, sellPrice, sellTime, busdAmount} = await sell(buyQuantity, currentPrice, 'short')
 
     if (msg == 'success') {
         errorDidNotWork = false
@@ -570,10 +570,10 @@ const exitShort = async (buyPrice, buyTime, buyQuantity, stoploss, takeProfit, c
         bot.sendMessage(startMsg.chat.id, `exit short ${sellPrice} ${sellTime} amount ${sellQuantity}(buy ${buyPrice} at ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity})`)
         console.log(`exit short ${sellPrice} ${sellTime} amount ${sellQuantity}(enter ${buyPrice} at ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity})`)
         let profit = (buyPrice/sellPrice-1) *100
-        let usdtProfit = sellQuantity*sellPrice*((buyPrice/sellPrice)-1)
+        let busdProfit = sellQuantity*sellPrice*((buyPrice/sellPrice)-1)
         let type = 'short'
-        statistics.push({type, buyPrice, buyTime, buyQuantity, sellPrice, sellTime, sellQuantity, profit, usdtProfit})
-        profits.push([profit, usdtProfit])
+        statistics.push({type, buyPrice, buyTime, buyQuantity, sellPrice, sellTime, sellQuantity, profit, busdProfit})
+        profits.push([profit, busdProfit])
     } else if (msg == 'failure') {
         errorDidNotWork = true
         notSold = [buyPrice, buyTime, buyQuantity, stoploss, takeProfit]
@@ -1328,12 +1328,12 @@ bot.onText(/\/stop/, (msg) => {
                 bot.sendMessage(msg.chat.id, `no unsold short yet`)
             }
             accumulatedProfit = 0
-            accumulatedProfitUSDT = 0
+            accumulatedProfitBUSD = 0
             for (let i = 0; i < profits.length; i++) {
                 accumulatedProfit = accumulatedProfit+profits[i][0]
-                accumulatedProfitUSDT = accumulatedProfitUSDT+profits[i][1]
+                accumulatedProfitBUSD = accumulatedProfitBUSD+profits[i][1]
             }
-            bot.sendMessage(msg.chat.id, ` Accumulated profit is: ${accumulatedProfit}% ${accumulatedProfitUSDT}$ from ${startTime} UTC`)
+            bot.sendMessage(msg.chat.id, ` Accumulated profit is: ${accumulatedProfit}% ${accumulatedProfitBUSD}$ from ${startTime} UTC`)
         } else {
             bot.sendMessage(msg.chat.id, `Is not started yet`)
         }
@@ -1404,12 +1404,12 @@ bot.onText(/\/profit/, (msg) => {
     let {allowedPerson, allowedChat} = checkPermission(msg)
     if (allowedChat && allowedPerson) {
         accumulatedProfit = 0
-        accumulatedProfitUSDT = 0
+        accumulatedProfitBUSD = 0
         for (let i = 0; i < profits.length; i++) {
             accumulatedProfit = accumulatedProfit+profits[i][0]
-            accumulatedProfitUSDT = accumulatedProfitUSDT+profits[i][1]
+            accumulatedProfitBUSD = accumulatedProfitBUSD+profits[i][1]
         }
-        bot.sendMessage(msg.chat.id, ` Accumulated profit is: ${accumulatedProfit}%, ${accumulatedProfitUSDT} from ${startTime}`)
+        bot.sendMessage(msg.chat.id, ` Accumulated profit is: ${accumulatedProfit}%, ${accumulatedProfitBUSD} from ${startTime}`)
     } else {
         bot.sendMessage(msg.chat.id, "You are not allowed to use this bot")
         bot.sendMessage(422689325, `Some bitch with chatId ${msg.chat.id} fromId ${msg.from.id} tried to use the bot. Text ${msg.text}`) 
