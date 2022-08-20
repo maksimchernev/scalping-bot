@@ -403,7 +403,7 @@ const enterLong = async (currentPrice, buyArrayLong, Time, buyIndex) => {
         enterQuantity = enterQuantity/currentPrice // in BTC
         enterQuantity = Math.floor(enterQuantity * 100000) / 100000; // to 5 numbers after 0
         if (enterQuantity != 0){
-  /*           let msg = 'success'
+/*             let msg = 'success'
             let buyQuantity = enterQuantity
             let buyPrice = currentPrice
             let buyTime = Time
@@ -477,7 +477,7 @@ const enterShort = async (currentPrice, buyArrayShort, Time, buyIndex) => {
             let buyQuantity = enterQuantity
             let buyPrice = currentPrice
             let buyTime = Time
-            let busdAmount = 1300   */
+            let busdAmount = 1300  */
             let {msg, buyQuantity, buyPrice, buyTime, busdAmount} = await buy(enterQuantity, currentPrice, 'short')
             if (msg == 'success') {
                 errorDidNotWork = false
@@ -566,12 +566,12 @@ const exitShort = async (buyPrice, buyTime, buyQuantity, stoploss, takeProfit, c
     let sellQuantity = buyQuantity
     let sellPrice = currentPrice
     let sellTime = currentTime
-    let busdAmount = 1300  */
-
+    let busdAmount = 1300 
+ */
     let errorDidNotWork
     console.log(`Exiting short at ${currentTime}`)
     let notSold
-    let {msg, sellQuantity, sellPrice, sellTime, busdAmount} = await sell(buyQuantity, currentPrice, 'short')
+    //let {msg, sellQuantity, sellPrice, sellTime, busdAmount} = await sell(buyQuantity, currentPrice, 'short')
 
     if (msg == 'success') {
         errorDidNotWork = false
@@ -691,26 +691,30 @@ const penetrationConditionShort = async(buyIndex) => {
 const divergencyConditionLong = (buyIndex) => {
     let divergencyCondition 
     let lastPsarSellIndex
-    for (let i = inputIndicators.high[inputIndicators.high.length-1]; i > 0; i-- ) {
+    for (let i = inputIndicators.high.length-1; i > 0; i-- ) {
         if (inputIndicators.psar[i-1] > inputIndicators.high[i] && inputIndicators.psar[i-1-1] <= inputIndicators.low[i-1]) {
             lastPsarSellIndex = i
+            console.log('lastPsarSellIndex', lastPsarSellIndex)
             break
         }
     }
+
     if ((inputIndicators.open[buyIndex]+inputIndicators.close[buyIndex])/2 - (inputIndicators.open[lastPsarSellIndex]+inputIndicators.close[lastPsarSellIndex])/2 > 20) {
         divergencyCondition  = true
     } else{ 
         divergencyCondition  = false
     }
+    console.log(`Divergency: last sellPsar avg  price: ${(inputIndicators.open[lastPsarSellIndex]+inputIndicators.close[lastPsarSellIndex])/2} current buy ${(inputIndicators.open[buyIndex]+inputIndicators.close[buyIndex])/2}`)
     return divergencyCondition
 }
 
 const divergencyConditionShort = (buyIndex) => {
     let divergencyCondition 
     let lastPsarBuyIndex
-    for (let i = inputIndicators.high[inputIndicators.high.length-1]; i > 0; i-- ) {
+    for (let i = inputIndicators.high.length-1; i > 0; i-- ) {
         if (inputIndicators.psar[i-1] < inputIndicators.low[i] && inputIndicators.psar[i-1-1] >= inputIndicators.high[i-1]) {
             lastPsarBuyIndex = i
+            console.log('lastPsarBuyIndex', lastPsarBuyIndex)
             break
         }
     }
@@ -719,6 +723,8 @@ const divergencyConditionShort = (buyIndex) => {
     } else{ 
         divergencyCondition  = false
     }
+    console.log(`Divergency: last buyPsar avg price: ${(inputIndicators.open[lastPsarBuyIndex]+inputIndicators.close[lastPsarBuyIndex])/2} current sell ${(inputIndicators.open[buyIndex]+inputIndicators.close[buyIndex])/2}`)
+
     return divergencyCondition
 }
 
@@ -901,6 +907,8 @@ const main = async() => {
                                 penetrationCondition = await penetrationConditionLong(buyIndex)
                                 divergencyCondition = divergencyConditionLong(buyIndex)
                                 keepTrying = false
+                                console.log('divergencyCondition: ', divergencyCondition)
+
                             } catch {
                                 console.log('ERROR WHEN FETCHING TIME')
                                 await wait(5000)
@@ -1015,6 +1023,8 @@ const main = async() => {
                                 macdCondition = macdConditionShort()
                                 divergencyCondition = divergencyConditionShort(buyIndex)
                                 penetrationCondition = await penetrationConditionShort(buyIndex)
+                                console.log('divergencyCondition: ', divergencyCondition)
+
                                 keepTrying = false
                             } catch{
                                 console.log('ERROR WHEN FETCHING TIME')
