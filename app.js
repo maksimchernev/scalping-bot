@@ -163,6 +163,15 @@ const waitBuyOrderCompletion = async (direction) => {
                 buyTime = new Date()
                 msg = 'success'
                 return {msg, buyQuantity, buyPrice, buyTime, busdAmount};
+
+            } else if (buyLongOrderInfo.info.status == 'PARTIALLY_FILLED') {
+                bot.sendMessage(msg)
+                console.log('LONG ORDER PARTIALLY FILLED! \n');
+                buyQuantity = buyLongOrderInfo.amount
+                buyPrice = buyLongOrderInfo.average
+                busdAmount = buyLongOrderInfo.cost
+                buyTime = new Date()
+                msg = 'success'
             }
             console.log('long order waiting...')
             await wait(ORDER_UPDATE_PERIOD);
@@ -394,7 +403,7 @@ const enterLong = async (currentPrice, buyArrayLong, Time, buyIndex) => {
         enterQuantity = enterQuantity/currentPrice // in BTC
         enterQuantity = Math.floor(enterQuantity * 100000) / 100000; // to 5 numbers after 0
         if (enterQuantity != 0){
-/*             let msg = 'success'
+  /*           let msg = 'success'
             let buyQuantity = enterQuantity
             let buyPrice = currentPrice
             let buyTime = Time
@@ -904,9 +913,9 @@ const main = async() => {
                             logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, 'long')      
                             console.log('Confirmed conditions long!')
                             // не покупать на хаях
-                            //if (currentPrice - inputIndicators.psar[buyIndex-1-1] < 55) {
-                                //console.log(`Не хаи. CurrentPrice: ${currentPrice} diff ${currentPrice - inputIndicators.psar[buyIndex-1-1]}` )
-                                //console.log(`${ticker} Price: `, currentPrice); 
+                            if (currentPrice - inputIndicators.psar[buyIndex-1-1] < 55) {
+                                console.log(`Не хаи. CurrentPrice: ${currentPrice} diff ${currentPrice - inputIndicators.psar[buyIndex-1-1]}` )
+                                console.log(`${ticker} Price: `, currentPrice); 
                                 let keepTrying
                                 do {
                                     try {
@@ -918,9 +927,9 @@ const main = async() => {
                                         keepTrying = true
                                     }
                                 } while (keepTrying)
-                            /* } else {
+                            } else {
                                 console.log(`Не покупаем на хаях. CurrentPrice: ${currentPrice} diff ${currentPrice - inputIndicators.psar[buyIndex-1-1]}`)
-                            } */
+                            } 
                         } else {
                             console.log('unconfirmed conditions long!')
                             logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, 'long')      
@@ -1019,8 +1028,8 @@ const main = async() => {
                             logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, 'short')      
                             console.log('Confirmed conditions short!')
                             // не покупать на хаях
-                            //if (inputIndicators.psar[buyIndex-1-1] - currentPrice < 55) {
-                            //    console.log(`Не хаи. CurrentPrice: ${currentPrice} diff ${inputIndicators.psar[buyIndex-1-1] - currentPrice}` )
+                            if (inputIndicators.psar[buyIndex-1-1] - currentPrice < 55) {
+                                console.log(`Не хаи. CurrentPrice: ${currentPrice} diff ${inputIndicators.psar[buyIndex-1-1] - currentPrice}` )
                                 console.log(`${ticker} Price: `, currentPrice); 
                                 let keepTrying
                                 do {
@@ -1033,9 +1042,9 @@ const main = async() => {
                                         keepTrying = true
                                     }
                                 } while(keepTrying)
-                            /* } else {
+                            } else {
                                 console.log(`Не покупаем на хаях. CurrentPrice: ${currentPrice} diff ${inputIndicators.psar[buyIndex-1-1] - currentPrice}`)
-                            } */
+                            } 
                         } else {
                             console.log('unconfirmed conditions short!')
                             logConditions(buyIndex, emaCondition, macdCondition, penetrationCondition, 'short')      
