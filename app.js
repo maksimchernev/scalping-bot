@@ -822,7 +822,7 @@ const main = async() => {
         let emaRange = inputIndicators.ema.slice(inputIndicators.ema.length-20, inputIndicators.ema.length)
         let minEma = Math.min.apply(Math, emaRange)    
         let maxEma = Math.max.apply(Math, emaRange)   
-        let isFlat = Math.abs(minEma - maxEma) < 4
+        let isFlat = Math.abs(minEma - maxEma) < 5
         console.log('isFlat: ', isFlat)
 
         //            !
