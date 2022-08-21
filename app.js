@@ -164,15 +164,7 @@ const waitBuyOrderCompletion = async (direction) => {
                 msg = 'success'
                 return {msg, buyQuantity, buyPrice, buyTime, busdAmount};
 
-            } else if (buyLongOrderInfo.info.status == 'PARTIALLY_FILLED') {
-                bot.sendMessage(msg)
-                console.log('LONG ORDER PARTIALLY FILLED! \n');
-                buyQuantity = buyLongOrderInfo.amount
-                buyPrice = buyLongOrderInfo.average
-                busdAmount = buyLongOrderInfo.cost
-                buyTime = new Date()
-                msg = 'success'
-            }
+            } 
             console.log('long order waiting...')
             await wait(ORDER_UPDATE_PERIOD);
         }
@@ -198,6 +190,19 @@ const waitBuyOrderCompletion = async (direction) => {
             busdAmount = buyLongOrderInfo.cost
             buyTime = new Date()
             msg = 'success'
+        } else if (buyLongOrderInfo.info.status == 'PARTIALLY_FILLED') {
+            console.log(`LONG ORDER PARTIALLY FILLED! ${buyLongOrderInfo.amount}\n`);
+            buyQuantity = buyLongOrderInfo.amount
+            buyPrice = buyLongOrderInfo.average
+            busdAmount = buyLongOrderInfo.cost
+            buyTime = new Date()
+            if (busdAmount > 15) {
+                msg = 'success'
+                bot.sendMessage(startMsg.chat.id, `Ok! ENTER LONG ORDER PARTIALLY FILLED! Continuing the script. ${buyQuantity} - higher than 15$\n`)
+            } else {
+                msg = 'failure'
+                bot.sendMessage(startMsg.chat.id, `SOS! ENTER LONG ORDER PARTIALLY FILLED!  ${buyQuantity} - lower than 15$\n`)
+            }
         }
         return {msg, buyQuantity, buyPrice, buyTime, busdAmount};
 
@@ -240,6 +245,20 @@ const waitBuyOrderCompletion = async (direction) => {
             busdAmount = buyShortOrderInfo.cost
             buyTime = new Date()
             msg = 'success'
+        } else if (buyShortOrderInfo.info.status == 'PARTIALLY_FILLED') {
+            console.log(`LONG ORDER PARTIALLY FILLED! ${buyShortOrderInfo.amount}\n`);
+            buyQuantity = buyShortOrderInfo.amount
+            buyPrice = buyShortOrderInfo.average
+            busdAmount = buyShortOrderInfo.cost
+            buyTime = new Date()
+            if (busdAmount > 15) {
+                msg = 'success'
+                bot.sendMessage(startMsg.chat.id, `Ok! ENTER SHORT ORDER PARTIALLY FILLED! Continuing the script. ${buyQuantity} - higher than 15$\n`)
+            } else {
+                msg = 'failure'
+                bot.sendMessage(startMsg.chat.id, `SOS! ENTER SHORT ORDER PARTIALLY FILLED!  ${buyQuantity} - lower than 15$\n`)
+            }
+            
         }
         return {msg, buyQuantity, buyPrice, buyTime, busdAmount};
     } else {
@@ -320,6 +339,13 @@ const waitSellOrderCompletion = async (direction) => {
             busdAmount = sellLongOrderInfo.cost
             sellTime = new Date()
             msg = 'success'
+        } else if (sellLongOrderInfo.info.status == 'PARTIALLY_FILLED') {
+            console.log(`LONG EXIT ORDER PARTIALLY FILLED! ${sellLongOrderInfo.amount}\n`);
+            sellQuantity = sellLongOrderInfo.amount
+            sellPrice = sellLongOrderInfo.average
+            busdAmount = sellLongOrderInfo.cost
+            sellTime = new Date()
+            msg = 'partiallyfilled'
         }
         return {msg, sellQuantity, sellPrice, sellTime, busdAmount};
 
@@ -362,6 +388,13 @@ const waitSellOrderCompletion = async (direction) => {
             busdAmount = sellShortOrderInfo.cost
             sellTime = new Date()
             msg = 'success'
+        } else if (sellShortOrderInfo.info.status == 'PARTIALLY_FILLED') {
+            console.log(`SHORT EXIT ORDER PARTIALLY FILLED! ${sellShortOrderInfo.amount}\n`);
+            sellQuantity = sellShortOrderInfo.amount
+            sellPrice = sellShortOrderInfo.average
+            busdAmount = sellShortOrderInfo.cost
+            sellTime = new Date()
+            msg = 'partiallyfilled'
         }
         return {msg, sellQuantity, sellPrice, sellTime, busdAmount};
     } else {
@@ -415,8 +448,9 @@ const enterLong = async (currentPrice, buyArrayLong, Time, buyIndex) => {
                 availableBalanceBUSD = availableBalanceBUSD - busdAmount
                 console.log(' ')
                 let stoploss
-            
-                if (buyPrice - inputIndicators.psar[inputIndicators.psar.length-1] > 180) {
+                if (buyPrice - inputIndicators.psar[inputIndicators.psar.length-1] > 250) { 
+                    stoploss = buyPrice - ((buyPrice - inputIndicators.psar[inputIndicators.psar.length-1]) *0.3)
+                } else if (buyPrice - inputIndicators.psar[inputIndicators.psar.length-1] > 180) {
                     stoploss = buyPrice - ((buyPrice - inputIndicators.psar[inputIndicators.psar.length-1]) *0.45)
                 } else if (buyPrice - inputIndicators.psar[inputIndicators.psar.length-1] > 100) {
                     stoploss = buyPrice - ((buyPrice - inputIndicators.psar[inputIndicators.psar.length-1]) *0.7)
@@ -431,7 +465,9 @@ const enterLong = async (currentPrice, buyArrayLong, Time, buyIndex) => {
                 let takeProfit
                 if (buyIndex != undefined) {
                     let difference = inputIndicators.psar[buyIndex-1-1] - inputIndicators.psar[inputIndicators.psar.length - 1]
-                    if (difference > 200) {
+                    if (difference > 250) {
+                        takeProfit = inputIndicators.psar[buyIndex-1-1] + (difference*0.3)
+                    } else if (difference > 200) {
                         takeProfit = inputIndicators.psar[buyIndex-1-1] + (difference*0.45)
                     } else if (difference > 150) {
                         takeProfit = inputIndicators.psar[buyIndex-1-1] + (difference*0.65)
@@ -485,7 +521,9 @@ const enterShort = async (currentPrice, buyArrayShort, Time, buyIndex) => {
                 console.log(' ')
 
                 let stoploss
-                if (inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice > 180) {
+                if (inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice > 250) {
+                    stoploss = buyPrice + ((inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice) *0.3)
+                } else if (inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice > 180) {
                     stoploss = buyPrice + ((inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice) *0.45)
                 } else if (inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice > 100) {
                     stoploss = buyPrice + ((inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice) *0.7)
@@ -500,7 +538,9 @@ const enterShort = async (currentPrice, buyArrayShort, Time, buyIndex) => {
                 let takeProfit
                 if (buyIndex != undefined) {
                     let difference = inputIndicators.psar[inputIndicators.psar.length - 1] - inputIndicators.psar[buyIndex-1-1]
-                    if (difference > 200) {
+                    if (difference > 250) {
+                        takeProfit = inputIndicators.psar[buyIndex-1-1] - (difference*0.3)
+                    } else if (difference > 200) {
                         takeProfit = inputIndicators.psar[buyIndex-1-1] - (difference*0.45)
                     } else if (difference > 150) {
                         takeProfit = inputIndicators.psar[buyIndex-1-1] - (difference*0.65)
@@ -558,7 +598,13 @@ const exitLong = async (buyPrice, buyTime, buyQuantity, stoploss, takeProfit, cu
         errorDidNotWork = true
         notSold = [buyPrice, buyTime, buyQuantity, stoploss, takeProfit]
         console.log(`Exit long order did not work. Buy price ${buyPrice} at ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} sell ${sellPrice} at ${currentTime}`)
-    }   
+    } else if (msg == 'partiallyfilled') {
+        errorDidNotWork = false
+        let notFilledBuyQuantity = buyQuantity - sellQuantity
+        notSold = [buyPrice, buyTime, notFilledBuyQuantity, stoploss, takeProfit]
+        bot.sendMessage(startMsg.chat.id, `Ok! EXIT LONG ORDER PARTIALLY FILLED! Continuing the script. Exited with ${sellQuantity}BTC which is ${busdAmount}BUSD\n`)
+        console.log(`Ok! EXIT LONG ORDER PARTIALLY FILLED! Continuing the script. Exited with ${sellQuantity}BTC which is ${busdAmount}BUSD\n`)
+    }
     return {errorDidNotWork, notSold}
 }
 const exitShort = async (buyPrice, buyTime, buyQuantity, stoploss, takeProfit, currentPrice, currentTime) => {
@@ -587,7 +633,12 @@ const exitShort = async (buyPrice, buyTime, buyQuantity, stoploss, takeProfit, c
         errorDidNotWork = true
         notSold = [buyPrice, buyTime, buyQuantity, stoploss, takeProfit]
         console.log(`Exit short order did not work. Enter short ${buyPrice} at ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} sell ${sellPrice} at ${currentTime}`)
-    }     
+    } else if (msg == 'partiallyfilled') {
+        errorDidNotWork = false
+        let notFilledBuyQuantity = buyQuantity - sellQuantity
+        notSold = [buyPrice, buyTime, notFilledBuyQuantity, stoploss, takeProfit]
+        bot.sendMessage(startMsg.chat.id, `Ok! EXIT SHORT ORDER PARTIALLY FILLED! Continuing the script. Exited with ${sellQuantity}BTC which is ${busdAmount}BUSD\n`)
+    }  
     return {errorDidNotWork, notSold}                    
 }
 
@@ -921,7 +972,7 @@ const main = async() => {
                             logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, 'long')      
                             console.log('Confirmed conditions long!')
                             // не покупать на хаях
-                            if (currentPrice - inputIndicators.psar[buyIndex-1-1] < 55) {
+                            if (currentPrice - inputIndicators.psar[buyIndex-1-1] < 95) {
                                 console.log(`Не хаи. CurrentPrice: ${currentPrice} diff ${currentPrice - inputIndicators.psar[buyIndex-1-1]}` )
                                 console.log(`${ticker} Price: `, currentPrice); 
                                 let keepTrying
@@ -1038,7 +1089,7 @@ const main = async() => {
                             logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, 'short')      
                             console.log('Confirmed conditions short!')
                             // не покупать на хаях
-                            if (inputIndicators.psar[buyIndex-1-1] - currentPrice < 55) {
+                            if (inputIndicators.psar[buyIndex-1-1] - currentPrice < 95) {
                                 console.log(`Не хаи. CurrentPrice: ${currentPrice} diff ${inputIndicators.psar[buyIndex-1-1] - currentPrice}` )
                                 console.log(`${ticker} Price: `, currentPrice); 
                                 let keepTrying
