@@ -403,13 +403,13 @@ const enterLong = async (currentPrice, buyArrayLong, Time, buyIndex) => {
         enterQuantity = enterQuantity/currentPrice // in BTC
         enterQuantity = Math.floor(enterQuantity * 100000) / 100000; // to 5 numbers after 0
         if (enterQuantity != 0){
-  /*           let msg = 'success'
+            let msg = 'success'
             let buyQuantity = enterQuantity
             let buyPrice = currentPrice
             let buyTime = Time
-            let busdAmount = 1300 */
+            let busdAmount = 1300
             errorEnteredTooManyTimes = false 
-            let {msg, buyQuantity, buyPrice, buyTime, busdAmount} = await buy(enterQuantity, currentPrice, 'long')
+            //let {msg, buyQuantity, buyPrice, buyTime, busdAmount} = await buy(enterQuantity, currentPrice, 'long')
             if (msg === 'success') {
                 errorDidNotWork = false
                 availableBalanceBUSD = availableBalanceBUSD - busdAmount
@@ -421,9 +421,9 @@ const enterLong = async (currentPrice, buyArrayLong, Time, buyIndex) => {
                 } else if (buyPrice - inputIndicators.psar[inputIndicators.psar.length-1] > 100) {
                     stoploss = buyPrice - ((buyPrice - inputIndicators.psar[inputIndicators.psar.length-1]) *0.7)
                 } else if (buyPrice - inputIndicators.psar[inputIndicators.psar.length-1] < 0) {
-                    stoploss = buyPrice - 100
+                    stoploss = buyPrice - 90
                 } else if (buyPrice - inputIndicators.psar[inputIndicators.psar.length-1] < 50) {
-                    stoploss = buyPrice - 50
+                    stoploss = buyPrice - 40
                 } else {
                     stoploss = inputIndicators.psar[inputIndicators.psar.length-1]
                 }
@@ -473,12 +473,12 @@ const enterShort = async (currentPrice, buyArrayShort, Time, buyIndex) => {
         enterQuantity = Math.floor(enterQuantity * 100000) / 100000; // to 5 numbers after 0
         if (enterQuantity != 0) {
             errorEnteredTooManyTimes = false
-            l/* et msg = 'success'
+            let msg = 'success'
             let buyQuantity = enterQuantity
             let buyPrice = currentPrice
             let buyTime = Time
-            let busdAmount = 1300   */
-            let {msg, buyQuantity, buyPrice, buyTime, busdAmount} = await buy(enterQuantity, currentPrice, 'short')
+            let busdAmount = 1300  
+            //let {msg, buyQuantity, buyPrice, buyTime, busdAmount} = await buy(enterQuantity, currentPrice, 'short')
             if (msg == 'success') {
                 errorDidNotWork = false
                 availableBalanceBTC = availableBalanceBTC - buyQuantity
@@ -533,16 +533,16 @@ const enterShort = async (currentPrice, buyArrayShort, Time, buyIndex) => {
     return {errorDidNotWork, errorEnteredTooManyTimes, errorInCalculatingEnterQuantity}
 }
 const exitLong = async (buyPrice, buyTime, buyQuantity, stoploss, takeProfit, currentPrice, currentTime) => {
-/*     let msg = 'success'
+    let msg = 'success'
     let sellQuantity = buyQuantity
     let sellPrice = currentPrice
     let sellTime = currentTime
-    let busdAmount = 1300   */
+    let busdAmount = 1300  
 
     let errorDidNotWork
     console.log(`Exiting long at ${currentTime}`)
     let notSold
-    let {msg, sellQuantity, sellPrice, sellTime, busdAmount} = await sell(buyQuantity, currentPrice, 'long')
+    //let {msg, sellQuantity, sellPrice, sellTime, busdAmount} = await sell(buyQuantity, currentPrice, 'long')
 
     if (msg == 'success') {
         errorDidNotWork = false
@@ -562,16 +562,16 @@ const exitLong = async (buyPrice, buyTime, buyQuantity, stoploss, takeProfit, cu
     return {errorDidNotWork, notSold}
 }
 const exitShort = async (buyPrice, buyTime, buyQuantity, stoploss, takeProfit, currentPrice, currentTime) => {
-/*     let msg = 'success'
+    let msg = 'success'
     let sellQuantity = buyQuantity
     let sellPrice = currentPrice
     let sellTime = currentTime
-    let busdAmount = 1300  */
+    let busdAmount = 1300 
 
     let errorDidNotWork
     console.log(`Exiting short at ${currentTime}`)
     let notSold
-    let {msg, sellQuantity, sellPrice, sellTime, busdAmount} = await sell(buyQuantity, currentPrice, 'short')
+    //let {msg, sellQuantity, sellPrice, sellTime, busdAmount} = await sell(buyQuantity, currentPrice, 'short')
 
     if (msg == 'success') {
         errorDidNotWork = false
@@ -904,7 +904,7 @@ const main = async() => {
                                 buyIndex = psarConditionLong(epoches)
                                 emaCondition = emaConditionLong(buyIndex)
                                 macdCondition = macdConditionLong()
-                                penetrationCondition = await penetrationConditionLong(buyIndex)
+                                ({currentPrice, penetrationCondition} = await penetrationConditionLong(buyIndex))
                                 divergencyCondition = divergencyConditionLong(buyIndex)
                                 keepTrying = false
                                 console.log('divergencyCondition: ', divergencyCondition)
@@ -1022,7 +1022,7 @@ const main = async() => {
                                 emaCondition = emaConditionShort(buyIndex)
                                 macdCondition = macdConditionShort()
                                 divergencyCondition = divergencyConditionShort(buyIndex)
-                                penetrationCondition = await penetrationConditionShort(buyIndex)
+                                ({currentPrice, penetrationCondition} = await penetrationConditionShort(buyIndex))
                                 console.log('divergencyCondition: ', divergencyCondition)
 
                                 keepTrying = false
