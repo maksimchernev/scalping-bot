@@ -637,6 +637,7 @@ const exitShort = async (buyPrice, buyTime, buyQuantity, stoploss, takeProfit, c
         errorDidNotWork = false
         let notFilledBuyQuantity = buyQuantity - sellQuantity
         notSold = [buyPrice, buyTime, notFilledBuyQuantity, stoploss, takeProfit]
+        console.log(`Ok! EXIT SHORT ORDER PARTIALLY FILLED! Continuing the script. Exited with ${sellQuantity}BTC which is ${busdAmount}BUSD\n`)
         bot.sendMessage(startMsg.chat.id, `Ok! EXIT SHORT ORDER PARTIALLY FILLED! Continuing the script. Exited with ${sellQuantity}BTC which is ${busdAmount}BUSD\n`)
     }  
     return {errorDidNotWork, notSold}                    
