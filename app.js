@@ -448,14 +448,14 @@ const enterLong = async (currentPrice, buyArrayLong, Time, buyIndex) => {
                 availableBalanceBUSD = availableBalanceBUSD - busdAmount
                 console.log(' ')
                 let stoploss
-                if (buyPrice - inputIndicators.psar[inputIndicators.psar.length-1] > 250) { 
+                if (buyPrice - inputIndicators.psar[inputIndicators.psar.length-1] > 200) { 
+                    stoploss = buyPrice - ((buyPrice - inputIndicators.psar[inputIndicators.psar.length-1]) *0.2)
+                } else if (buyPrice - inputIndicators.psar[inputIndicators.psar.length-1] > 150) {
                     stoploss = buyPrice - ((buyPrice - inputIndicators.psar[inputIndicators.psar.length-1]) *0.3)
-                } else if (buyPrice - inputIndicators.psar[inputIndicators.psar.length-1] > 180) {
-                    stoploss = buyPrice - ((buyPrice - inputIndicators.psar[inputIndicators.psar.length-1]) *0.45)
                 } else if (buyPrice - inputIndicators.psar[inputIndicators.psar.length-1] > 100) {
-                    stoploss = buyPrice - ((buyPrice - inputIndicators.psar[inputIndicators.psar.length-1]) *0.7)
+                    stoploss = buyPrice - ((buyPrice - inputIndicators.psar[inputIndicators.psar.length-1]) *0.5)
                 } else if (buyPrice - inputIndicators.psar[inputIndicators.psar.length-1] < 0) {
-                    stoploss = buyPrice - 90
+                    stoploss = buyPrice - 60
                 } else if (buyPrice - inputIndicators.psar[inputIndicators.psar.length-1] < 50) {
                     stoploss = buyPrice - 40
                 } else {
@@ -465,12 +465,12 @@ const enterLong = async (currentPrice, buyArrayLong, Time, buyIndex) => {
                 let takeProfit
                 if (buyIndex != undefined) {
                     let difference = inputIndicators.psar[buyIndex-1-1] - inputIndicators.psar[inputIndicators.psar.length - 1]
-                    if (difference > 250) {
-                        takeProfit = inputIndicators.psar[buyIndex-1-1] + (difference*0.3)
-                    } else if (difference > 200) {
-                        takeProfit = inputIndicators.psar[buyIndex-1-1] + (difference*0.45)
+                    if (difference > 200) {
+                        takeProfit = inputIndicators.psar[buyIndex-1-1] + (difference*0.5)
                     } else if (difference > 150) {
-                        takeProfit = inputIndicators.psar[buyIndex-1-1] + (difference*0.65)
+                        takeProfit = inputIndicators.psar[buyIndex-1-1] + (difference*0.45)
+                    } else if (difference > 100) {
+                        takeProfit = inputIndicators.psar[buyIndex-1-1] + (difference*0.6)
                     } else {
                         takeProfit = inputIndicators.psar[buyIndex-1-1] + (difference)
                     }
@@ -509,7 +509,7 @@ const enterShort = async (currentPrice, buyArrayShort, Time, buyIndex) => {
         enterQuantity = Math.floor(enterQuantity * 100000) / 100000; // to 5 numbers after 0
         if (enterQuantity != 0) {
             errorEnteredTooManyTimes = false
-/*             let msg = 'success'
+ /*            let msg = 'success'
             let buyQuantity = enterQuantity
             let buyPrice = currentPrice
             let buyTime = Time
@@ -521,14 +521,14 @@ const enterShort = async (currentPrice, buyArrayShort, Time, buyIndex) => {
                 console.log(' ')
 
                 let stoploss
-                if (inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice > 250) {
+                if (inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice > 200) {
+                    stoploss = buyPrice + ((inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice) *0.2)
+                } else if (inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice > 150) {
                     stoploss = buyPrice + ((inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice) *0.3)
-                } else if (inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice > 180) {
-                    stoploss = buyPrice + ((inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice) *0.45)
                 } else if (inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice > 100) {
-                    stoploss = buyPrice + ((inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice) *0.7)
+                    stoploss = buyPrice + ((inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice) *0.5)
                 } else if (inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice < 0) {
-                    stoploss = buyPrice + 90
+                    stoploss = buyPrice + 60
                 } else if (inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice < 50) {
                     stoploss = buyPrice + 40
                 } else {
@@ -538,12 +538,12 @@ const enterShort = async (currentPrice, buyArrayShort, Time, buyIndex) => {
                 let takeProfit
                 if (buyIndex != undefined) {
                     let difference = inputIndicators.psar[inputIndicators.psar.length - 1] - inputIndicators.psar[buyIndex-1-1]
-                    if (difference > 250) {
-                        takeProfit = inputIndicators.psar[buyIndex-1-1] - (difference*0.3)
-                    } else if (difference > 200) {
+                    if (difference > 220) {
+                        takeProfit = inputIndicators.psar[buyIndex-1-1] - (difference*0.5)
+                    } else if (difference > 180) {
                         takeProfit = inputIndicators.psar[buyIndex-1-1] - (difference*0.45)
                     } else if (difference > 150) {
-                        takeProfit = inputIndicators.psar[buyIndex-1-1] - (difference*0.65)
+                        takeProfit = inputIndicators.psar[buyIndex-1-1] - (difference*0.6)
                     } else {
                         takeProfit = inputIndicators.psar[buyIndex-1-1] - (difference)
                     }
@@ -573,12 +573,12 @@ const enterShort = async (currentPrice, buyArrayShort, Time, buyIndex) => {
     return {errorDidNotWork, errorEnteredTooManyTimes, errorInCalculatingEnterQuantity}
 }
 const exitLong = async (buyPrice, buyTime, buyQuantity, stoploss, takeProfit, currentPrice, currentTime) => {
- /*    let msg = 'success'
+/*     let msg = 'success'
     let sellQuantity = buyQuantity
     let sellPrice = currentPrice
     let sellTime = currentTime
-    let busdAmount = 1300   */
-
+    let busdAmount = 1300  
+ */
     let errorDidNotWork
     console.log(`Exiting long at ${currentTime}`)
     let notSold
@@ -698,7 +698,7 @@ const emaConditionShort = (buyIndex) => {
 
 const macdConditionLong = () => {
     let macdCondition
-    if (inputIndicators.macd[inputIndicators.macd.length-1] > inputIndicators.macdSignal[inputIndicators.macdSignal.length-1] && inputIndicators.macdSignal[inputIndicators.macdSignal.length-1]>0) {
+    if (inputIndicators.macd[inputIndicators.macd.length-1] > inputIndicators.macdSignal[inputIndicators.macdSignal.length-1]) {
         macdCondition = true
     } else {
         macdCondition = false
@@ -708,7 +708,7 @@ const macdConditionLong = () => {
 
 const macdConditionShort = () => {
     let macdCondition
-    if (inputIndicators.macd[inputIndicators.macd.length-1] < inputIndicators.macdSignal[inputIndicators.macdSignal.length-1] && inputIndicators.macdSignal[inputIndicators.macdSignal.length-1]<0) {
+    if (inputIndicators.macd[inputIndicators.macd.length-1] < inputIndicators.macdSignal[inputIndicators.macdSignal.length-1]) {
         macdCondition = true
     } else {
         macdCondition = false
@@ -876,18 +876,11 @@ const main = async() => {
         ///           !
         //////////////!
 
-        //trend check
-        let emaRange = inputIndicators.ema.slice(inputIndicators.ema.length-20, inputIndicators.ema.length)
-        let minEma = Math.min.apply(Math, emaRange)    
-        let maxEma = Math.max.apply(Math, emaRange)   
-        let isFlat = Math.abs(minEma - maxEma) < 5
-        console.log('isFlat: ', isFlat)
-
         //            !
         // Enter long !
         //            !
 
-        if (!beingExecutedEnterLong && !isFlat) {
+        if (!beingExecutedEnterLong) {
             (async function() {
                 let currentPrice
                 let buyIndex = psarConditionLong(epoches)
@@ -973,7 +966,7 @@ const main = async() => {
                             logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, 'long')      
                             console.log('Confirmed conditions long!')
                             // не покупать на хаях
-                            if (currentPrice - inputIndicators.psar[buyIndex-1-1] < 95) {
+                            if (currentPrice - inputIndicators.psar[buyIndex-1-1] < 70) {
                                 console.log(`Не хаи. CurrentPrice: ${currentPrice} diff ${currentPrice - inputIndicators.psar[buyIndex-1-1]}` )
                                 console.log(`${ticker} Price: `, currentPrice); 
                                 let keepTrying
@@ -1003,7 +996,7 @@ const main = async() => {
         //             !
         // ENTER short !
         //             !
-        if (!beingExecutedEnterShort && !isFlat) {
+        if (!beingExecutedEnterShort ) {
             (async function() {
                 let currentPrice
                 let buyIndex = psarConditionShort(epoches)
@@ -1090,7 +1083,7 @@ const main = async() => {
                             logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, 'short')      
                             console.log('Confirmed conditions short!')
                             // не покупать на хаях
-                            if (inputIndicators.psar[buyIndex-1-1] - currentPrice < 95) {
+                            if (inputIndicators.psar[buyIndex-1-1] - currentPrice < 70) {
                                 console.log(`Не хаи. CurrentPrice: ${currentPrice} diff ${inputIndicators.psar[buyIndex-1-1] - currentPrice}` )
                                 console.log(`${ticker} Price: `, currentPrice); 
                                 let keepTrying
