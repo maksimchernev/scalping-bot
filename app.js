@@ -538,11 +538,11 @@ const enterShort = async (currentPrice, buyArrayShort, Time, buyIndex) => {
                 let takeProfit
                 if (buyIndex != undefined) {
                     let difference = inputIndicators.psar[inputIndicators.psar.length - 1] - inputIndicators.psar[buyIndex-1-1]
-                    if (difference > 220) {
+                    if (difference > 200) {
                         takeProfit = inputIndicators.psar[buyIndex-1-1] - (difference*0.5)
-                    } else if (difference > 180) {
-                        takeProfit = inputIndicators.psar[buyIndex-1-1] - (difference*0.45)
                     } else if (difference > 150) {
+                        takeProfit = inputIndicators.psar[buyIndex-1-1] - (difference*0.45)
+                    } else if (difference > 100) {
                         takeProfit = inputIndicators.psar[buyIndex-1-1] - (difference*0.6)
                     } else {
                         takeProfit = inputIndicators.psar[buyIndex-1-1] - (difference)
