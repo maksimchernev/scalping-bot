@@ -454,10 +454,8 @@ const enterLong = async (currentPrice, buyArrayLong, Time, buyIndex) => {
                     stoploss = buyPrice - ((buyPrice - inputIndicators.psar[inputIndicators.psar.length-1]) *0.3)
                 } else if (buyPrice - inputIndicators.psar[inputIndicators.psar.length-1] > 100) {
                     stoploss = buyPrice - ((buyPrice - inputIndicators.psar[inputIndicators.psar.length-1]) *0.5)
-                } else if (buyPrice - inputIndicators.psar[inputIndicators.psar.length-1] < 0) {
+                } else if (buyPrice - inputIndicators.psar[inputIndicators.psar.length-1] < 100) {
                     stoploss = buyPrice - 60
-                } else if (buyPrice - inputIndicators.psar[inputIndicators.psar.length-1] < 50) {
-                    stoploss = buyPrice - 40
                 } else {
                     stoploss = inputIndicators.psar[inputIndicators.psar.length-1]
                 }
@@ -468,7 +466,7 @@ const enterLong = async (currentPrice, buyArrayLong, Time, buyIndex) => {
                     if (difference > 200) {
                         takeProfit = inputIndicators.psar[buyIndex-1-1] + (difference*0.5)
                     } else if (difference > 150) {
-                        takeProfit = inputIndicators.psar[buyIndex-1-1] + (difference*0.45)
+                        takeProfit = inputIndicators.psar[buyIndex-1-1] + (difference*0.4)
                     } else if (difference > 100) {
                         takeProfit = inputIndicators.psar[buyIndex-1-1] + (difference*0.6)
                     } else {
@@ -509,7 +507,7 @@ const enterShort = async (currentPrice, buyArrayShort, Time, buyIndex) => {
         enterQuantity = Math.floor(enterQuantity * 100000) / 100000; // to 5 numbers after 0
         if (enterQuantity != 0) {
             errorEnteredTooManyTimes = false
- /*            let msg = 'success'
+/*             let msg = 'success'
             let buyQuantity = enterQuantity
             let buyPrice = currentPrice
             let buyTime = Time
@@ -527,10 +525,8 @@ const enterShort = async (currentPrice, buyArrayShort, Time, buyIndex) => {
                     stoploss = buyPrice + ((inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice) *0.3)
                 } else if (inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice > 100) {
                     stoploss = buyPrice + ((inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice) *0.5)
-                } else if (inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice < 0) {
+                } else if (inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice < 100) {
                     stoploss = buyPrice + 60
-                } else if (inputIndicators.psar[inputIndicators.psar.length-1] - buyPrice < 50) {
-                    stoploss = buyPrice + 40
                 } else {
                     stoploss = inputIndicators.psar[inputIndicators.psar.length-1]
                 }
@@ -541,7 +537,7 @@ const enterShort = async (currentPrice, buyArrayShort, Time, buyIndex) => {
                     if (difference > 200) {
                         takeProfit = inputIndicators.psar[buyIndex-1-1] - (difference*0.5)
                     } else if (difference > 150) {
-                        takeProfit = inputIndicators.psar[buyIndex-1-1] - (difference*0.45)
+                        takeProfit = inputIndicators.psar[buyIndex-1-1] - (difference*0.4)
                     } else if (difference > 100) {
                         takeProfit = inputIndicators.psar[buyIndex-1-1] - (difference*0.6)
                     } else {
@@ -577,8 +573,8 @@ const exitLong = async (buyPrice, buyTime, buyQuantity, stoploss, takeProfit, cu
     let sellQuantity = buyQuantity
     let sellPrice = currentPrice
     let sellTime = currentTime
-    let busdAmount = 1300  
- */
+    let busdAmount = 1300   */
+
     let errorDidNotWork
     console.log(`Exiting long at ${currentTime}`)
     let notSold
