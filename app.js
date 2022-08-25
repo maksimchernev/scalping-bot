@@ -617,11 +617,12 @@ const exitShort = async (buyPrice, buyTime, buyQuantity, stoploss, takeProfit, c
 
     if (msg == 'success') {
         errorDidNotWork = false
-        availableBalanceBTC = availableBalanceBTC + sellQuantity
-        bot.sendMessage(startMsg.chat.id, `exit short ${sellPrice} ${sellTime} amount ${sellQuantity}(buy ${buyPrice} at ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity})`)
-        console.log(`exit short ${sellPrice} ${sellTime} amount ${sellQuantity}(enter ${buyPrice} at ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity})`)
         let profit = (buyPrice/sellPrice-1) *100
         let busdProfit = sellQuantity*sellPrice*((buyPrice/sellPrice)-1)
+        availableBalanceBTC = availableBalanceBTC + sellQuantity
+        availableBalanceBUSD = availableBalanceBUSD + busdProfit
+        bot.sendMessage(startMsg.chat.id, `exit short ${sellPrice} ${sellTime} amount ${sellQuantity}(buy ${buyPrice} at ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity})`)
+        console.log(`exit short ${sellPrice} ${sellTime} amount ${sellQuantity}(enter ${buyPrice} at ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} amount ${buyQuantity})`)
         let type = 'short'
         statistics.push({type, buyPrice, buyTime, buyQuantity, sellPrice, sellTime, sellQuantity, profit, busdProfit})
         profits.push([profit, busdProfit])
@@ -774,6 +775,15 @@ const divergencyConditionShort = (buyIndex) => {
     console.log(`Divergency: last buyPsar avg price: ${(inputIndicators.open[lastPsarBuyIndex]+inputIndicators.close[lastPsarBuyIndex])/2} current sell ${(inputIndicators.open[buyIndex]+inputIndicators.close[buyIndex])/2}`)
 
     return divergencyCondition
+}
+const adxCondition = (inputIndicators) => {
+    let dxCondition
+    if (inputIndicators.dx[inputIndicators.dx.length-1] < 63) {
+        dxCondition = true
+    } else {
+        dxCondition = false
+    }
+    return dxCondition
 }
 
 const logConditions = (buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, direction) => {
@@ -956,7 +966,6 @@ const main = async() => {
                                 keepTrying = true
                             }
                         } while (keepTrying)
-                        beingExecutedEnterLong = false
 
                         if (buyIndex && (emaCondition || divergencyCondition) && macdCondition && penetrationCondition) {
                             logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, 'long')      
@@ -983,6 +992,9 @@ const main = async() => {
                             console.log('unconfirmed conditions long!')
                             logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, 'long')      
                         }
+
+                        beingExecutedEnterLong = false
+
                     } else {
                         console.log('already entered long here')
                     }
@@ -1073,7 +1085,6 @@ const main = async() => {
                                 keepTrying = true
                             }
                         } while (keepTrying)
-                        beingExecutedEnterShort = false
 
                         if (buyIndex && (emaCondition || divergencyCondition) && macdCondition && penetrationCondition) {
                             logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, 'short')      
@@ -1096,6 +1107,7 @@ const main = async() => {
                             } else {
                                 console.log(`Не покупаем на хаях. CurrentPrice: ${currentPrice} diff ${inputIndicators.psar[buyIndex-1-1] - currentPrice}`)
                             } 
+                            beingExecutedEnterShort = false
                         } else {
                             console.log('unconfirmed conditions short!')
                             logConditions(buyIndex, emaCondition, macdCondition, penetrationCondition, 'short')      
@@ -1452,7 +1464,7 @@ bot.onText(/\/stop/, (msg) => {
     }
 });
 
-bot.onText(/\/statistics/, (msg) => {
+bot.onText(/\/statistics/, async (msg) => {
     let {allowedPerson, allowedChat} = checkPermission(msg)
     if (allowedChat && allowedPerson) {
         if (statistics.length != 0) {
@@ -1474,7 +1486,7 @@ bot.onText(/\/statistics/, (msg) => {
     }
 });
 
-bot.onText(/\/unsold/, (msg) => {
+bot.onText(/\/unsold/, async (msg) => {
     let {allowedPerson, allowedChat} = checkPermission(msg)
     if (allowedChat && allowedPerson) {
         if (buyArrayLong.length != 0) {
@@ -1509,7 +1521,7 @@ bot.onText(/\/unsold/, (msg) => {
     }
 });
 
-bot.onText(/\/profit/, (msg) => {
+bot.onText(/\/profit/, async (msg) => {
     let {allowedPerson, allowedChat} = checkPermission(msg)
     if (allowedChat && allowedPerson) {
         accumulatedProfit = 0
@@ -1525,12 +1537,30 @@ bot.onText(/\/profit/, (msg) => {
     }
 });
 
-bot.onText(/\/clearunsold/, (msg) => {
+bot.onText(/\/clearunsold/, async (msg) => {
     let {allowedPerson, allowedChat} = checkPermission(msg)
     if (allowedChat && allowedPerson) {
-        buyArrayShort = []
-        buyArrayLong = []
-        bot.sendMessage(msg.chat.id, `Cleared!`)
+        if (buyArrayLong.length != 0) {
+            let balanceBUSDToBeRestored = 0
+            for (let buy of buyArrayLong) {
+                balanceBUSDToBeRestored =  balanceBUSDToBeRestored + buy[2]*buy[0]
+            }
+            buyArrayLong = []
+            bot.sendMessage(msg.chat.id, `Long buyArray cleared!`)
+        } else {
+            bot.sendMessage(msg.chat.id, `Long buyArray is already empty`)
+        }
+        if (buyArrayShort.length != 0) {
+            let balanceBTCToBeRestored = 0
+            for (let buy of buyArrayShort) {
+                balanceBTCToBeRestored =  balanceBTCToBeRestored + buy[2]
+            }
+            buyArrayShort = []
+            bot.sendMessage(msg.chat.id, `Short buyArray cleared!`)
+        } else {
+            bot.sendMessage(msg.chat.id, `Short buyArray is already empty`)
+        }
+        
     } else {
         bot.sendMessage(msg.chat.id, "You are not allowed to use this bot")
         bot.sendMessage(422689325, `Some bitch with chatId ${msg.chat.id} fromId ${msg.from.id} tried to use the bot. Text ${msg.text}`) 
