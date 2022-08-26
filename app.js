@@ -153,9 +153,8 @@ const waitBuyOrderCompletion = async (direction) => {
     if (direction == 'long') {
         console.log('WAITING BUY LONG ORDER COMPLETION');
         for(let i = 0; i < 7; i++){
-            buyLongOrderInfo = await binanceClient.fetchOrder(buyLongOrderInfo.id, ticker)
             console.log('long order status', buyLongOrderInfo.status)
-            if(buyLongOrderInfo.status === 'closed'){
+            if(buyLongOrderInfo.info.status === 'FILLED'){
                 console.log('LONG ORDER PURCHASE COMPLETE! \n');
                 buyQuantity = buyLongOrderInfo.amount
                 buyPrice = buyLongOrderInfo.average
@@ -163,46 +162,51 @@ const waitBuyOrderCompletion = async (direction) => {
                 buyTime = new Date()
                 msg = 'success'
                 return {msg, buyQuantity, buyPrice, buyTime, busdAmount};
-
             } 
             console.log('long order waiting...')
             await wait(ORDER_UPDATE_PERIOD);
         }
-        console.log('long order status', buyLongOrderInfo.status)
-        console.log('LONG ORDER PURCHASE TIMED OUT, CANCELLING \n');
 
+        console.log('long order status', buyLongOrderInfo.info.status)
+        console.log('LONG ORDER PURCHASE TIMED OUT, CANCELLING \n');
         try {
             await binanceClient.cancelOrder(buyLongOrderInfo.id, ticker)
         } catch(e) {
             console.log('ERROR CANCELLING')
         }
+
+
         buyLongOrderInfo = await binanceClient.fetchOrder(buyLongOrderInfo.id, ticker)
-        if (buyLongOrderInfo.status === 'canceled') {
-            busdAmount = null
-            buyQuantity = null
-            buyPrice = null
-            buyTime = new Date()
-            msg = 'failure'
-        } else if (buyLongOrderInfo.status === 'closed') {
+        let amount = buyLongOrderInfo.info.executedQty
+        let initialAmount = buyLongOrderInfo.info.executedQty
+        if(amount == initialAmount ){
             console.log('LONG ORDER PURCHASE COMPLETE AT DOUBLE CHECK! \n');
             buyQuantity = buyLongOrderInfo.amount
             buyPrice = buyLongOrderInfo.average
             busdAmount = buyLongOrderInfo.cost
             buyTime = new Date()
             msg = 'success'
-        } else if (buyLongOrderInfo.info.status == 'PARTIALLY_FILLED') {
+        } else if (buyLongOrderInfo.cost > 15 && amount < initialAmount) {
             console.log(`LONG ORDER PARTIALLY FILLED! ${buyLongOrderInfo.amount}\n`);
             buyQuantity = buyLongOrderInfo.amount
             buyPrice = buyLongOrderInfo.average
             busdAmount = buyLongOrderInfo.cost
             buyTime = new Date()
-            if (busdAmount > 15) {
-                msg = 'success'
-                bot.sendMessage(startMsg.chat.id, `Ok! ENTER LONG ORDER PARTIALLY FILLED! Continuing the script. ${buyQuantity} - higher than 15$\n`)
-            } else {
-                msg = 'failure'
-                bot.sendMessage(startMsg.chat.id, `SOS! ENTER LONG ORDER PARTIALLY FILLED!  ${buyQuantity} - lower than 15$\n`)
-            }
+            msg = 'success'
+            bot.sendMessage(startMsg.chat.id, `Ok! ENTER LONG ORDER PARTIALLY FILLED! Continuing the script. ${buyQuantity} - higher than 15$\n`)
+        } else if (buyLongOrderInfo.cost < 15 && buyLongOrderInfo.cost > 0 && amount < initialAmount) {
+            busdAmount = null
+            buyQuantity = null
+            buyPrice = null
+            buyTime = new Date()
+            msg = 'failure'
+            bot.sendMessage(startMsg.chat.id, `SOS! ENTER LONG ORDER PARTIALLY FILLED!  ${buyLongOrderInfo.amount} - lower than 15$\n`)
+        } else {
+            busdAmount = null
+            buyQuantity = null
+            buyPrice = null
+            buyTime = new Date()
+            msg = 'failure'
         }
         return {msg, buyQuantity, buyPrice, buyTime, busdAmount};
 
@@ -231,35 +235,39 @@ const waitBuyOrderCompletion = async (direction) => {
         } catch(e) {
             console.log('ERROR CANCELLING')
         }
+
         buyShortOrderInfo = await binanceClient.fetchOrder(buyShortOrderInfo.id, ticker)
-        if (buyShortOrderInfo.status === 'canceled') {
-            busdAmount = null
-            buyQuantity = null
-            buyPrice = null
-            buyTime = new Date()
-            msg = 'failure'
-        } else if (buyShortOrderInfo.status === 'closed') {
+        let amount = buyShortOrderInfo.info.executedQty
+        let initialAmount = buyShortOrderInfo.info.executedQty
+        if(amount == initialAmount ){
             console.log('SHORT ORDER PURCHASE COMPLETE AT DOUBLE CHECK! \n');
             buyQuantity = buyShortOrderInfo.amount
             buyPrice = buyShortOrderInfo.average
             busdAmount = buyShortOrderInfo.cost
             buyTime = new Date()
             msg = 'success'
-        } else if (buyShortOrderInfo.info.status == 'PARTIALLY_FILLED') {
-            console.log(`LONG ORDER PARTIALLY FILLED! ${buyShortOrderInfo.amount}\n`);
+        } else if (buyShortOrderInfo.cost > 15 && amount < initialAmount) {
+            console.log(`SHORT ORDER PARTIALLY FILLED! ${buyShortOrderInfo.amount}\n`);
             buyQuantity = buyShortOrderInfo.amount
             buyPrice = buyShortOrderInfo.average
             busdAmount = buyShortOrderInfo.cost
             buyTime = new Date()
-            if (busdAmount > 15) {
-                msg = 'success'
-                bot.sendMessage(startMsg.chat.id, `Ok! ENTER SHORT ORDER PARTIALLY FILLED! Continuing the script. ${buyQuantity} - higher than 15$\n`)
-            } else {
-                msg = 'failure'
-                bot.sendMessage(startMsg.chat.id, `SOS! ENTER SHORT ORDER PARTIALLY FILLED!  ${buyQuantity} - lower than 15$\n`)
-            }
-            
-        }
+            msg = 'success'
+            bot.sendMessage(startMsg.chat.id, `Ok! ENTER LONG ORDER PARTIALLY FILLED! Continuing the script. ${buyQuantity} - higher than 15$\n`)
+        } else if (buyShortOrderInfo.cost < 15 && buyShortOrderInfo.cost > 0 && amount < initialAmount) {
+            busdAmount = null
+            buyQuantity = null
+            buyPrice = null
+            buyTime = new Date()
+            msg = 'failure'
+            bot.sendMessage(startMsg.chat.id, `SOS! ENTER LONG ORDER PARTIALLY FILLED!  ${buyShortOrderInfo.amount} - lower than 15$\n`)
+        } else {
+            busdAmount = null
+            buyQuantity = null
+            buyPrice = null
+            buyTime = new Date()
+            msg = 'failure'
+        }         
         return {msg, buyQuantity, buyPrice, buyTime, busdAmount};
     } else {
         console.log('unknown direction')
@@ -270,7 +278,6 @@ const waitBuyOrderCompletion = async (direction) => {
         msg = 'failure'
         return {msg, buyQuantity, buyPrice, buyTime, busdAmount};
     }
- 	
 }
 
 const buy = async (enterQuantity, currentPrice, direction) => {
@@ -325,28 +332,32 @@ const waitSellOrderCompletion = async (direction) => {
         } catch(e) {
             console.log('ERROR CANCELLING')
         }
+
         sellLongOrderInfo = await binanceClient.fetchOrder(sellLongOrderInfo.id, ticker)
-        if (sellLongOrderInfo.status === 'canceled') {
-            busdAmount = null
-            sellQuantity = null
-            sellPrice = null
-            sellTime = new Date()
-            msg = 'failure'
-        } else if (sellLongOrderInfo.status === 'closed') {
+        let amount = sellLongOrderInfo.info.executedQty
+        let initialAmount = sellLongOrderInfo.info.executedQty
+        if(amount == initialAmount ){
             console.log('LONG ORDER EXIT COMPLETE AT DOUBLE CHECK! \n');
             sellQuantity = sellLongOrderInfo.amount
             sellPrice = sellLongOrderInfo.average
             busdAmount = sellLongOrderInfo.cost
             sellTime = new Date()
             msg = 'success'
-        } else if (sellLongOrderInfo.info.status == 'PARTIALLY_FILLED') {
+        } else if (sellLongOrderInfo.cost > 0 && amount < initialAmount) {
             console.log(`LONG EXIT ORDER PARTIALLY FILLED! ${sellLongOrderInfo.amount}\n`);
             sellQuantity = sellLongOrderInfo.amount
             sellPrice = sellLongOrderInfo.average
             busdAmount = sellLongOrderInfo.cost
             sellTime = new Date()
             msg = 'partiallyfilled'
-        }
+            bot.sendMessage(startMsg.chat.id, `Ok! LONG EXIT ORDER PARTIALLY FILLED! Continuing the script. ${sellQuantity} - higher than 15$\n`)
+        } else {
+            busdAmount = null
+            sellQuantity = null
+            sellPrice = null
+            sellTime = new Date()
+            msg = 'failure'
+        }        
         return {msg, sellQuantity, sellPrice, sellTime, busdAmount};
 
     } else if (direction == 'short') {
@@ -374,28 +385,34 @@ const waitSellOrderCompletion = async (direction) => {
         } catch(e) {
             console.log('ERROR CANCELLING')
         }
+
+
         sellShortOrderInfo = await binanceClient.fetchOrder(sellShortOrderInfo.id, ticker)
-        if (sellShortOrderInfo.status === 'canceled') {
-            busdAmount = null
-            sellQuantity = null
-            sellPrice = null
-            sellTime = new Date()
-            msg = 'failure'
-        } else if (sellShortOrderInfo.status === 'closed') {
+
+        let amount = sellShortOrderInfo.info.executedQty
+        let initialAmount = sellShortOrderInfo.info.executedQty
+        if(amount == initialAmount ){
             console.log('SHORT ORDER EXIT COMPLETE AT DOUBLE CHECK! \n');
             sellQuantity = sellShortOrderInfo.amount
             sellPrice = sellShortOrderInfo.average
             busdAmount = sellShortOrderInfo.cost
             sellTime = new Date()
             msg = 'success'
-        } else if (sellShortOrderInfo.info.status == 'PARTIALLY_FILLED') {
+        } else if (sellShortOrderInfo.cost > 0 && amount < initialAmount) {
             console.log(`SHORT EXIT ORDER PARTIALLY FILLED! ${sellShortOrderInfo.amount}\n`);
             sellQuantity = sellShortOrderInfo.amount
             sellPrice = sellShortOrderInfo.average
             busdAmount = sellShortOrderInfo.cost
             sellTime = new Date()
             msg = 'partiallyfilled'
-        }
+            bot.sendMessage(startMsg.chat.id, `Ok! SHORT EXIT ORDER PARTIALLY FILLED! Continuing the script. ${sellQuantity} - higher than 15$\n`)
+        } else {
+            busdAmount = null
+            sellQuantity = null
+            sellPrice = null
+            sellTime = new Date()
+            msg = 'failure'
+        }        
         return {msg, sellQuantity, sellPrice, sellTime, busdAmount};
     } else {
         console.log('unknown direction')
@@ -1546,6 +1563,7 @@ bot.onText(/\/clearunsold/, async (msg) => {
             for (let buy of buyArrayLong) {
                 balanceBUSDToBeRestored =  balanceBUSDToBeRestored + buy[2]*buy[0]
             }
+            availableBalanceBUSD = availableBalanceBUSD + balanceBUSDToBeRestored
             buyArrayLong = []
             bot.sendMessage(msg.chat.id, `Long buyArray cleared!`)
         } else {
@@ -1556,6 +1574,7 @@ bot.onText(/\/clearunsold/, async (msg) => {
             for (let buy of buyArrayShort) {
                 balanceBTCToBeRestored =  balanceBTCToBeRestored + buy[2]
             }
+            availableBalanceBTC = availableBalanceBTC + balanceBTCToBeRestored
             buyArrayShort = []
             bot.sendMessage(msg.chat.id, `Short buyArray cleared!`)
         } else {
