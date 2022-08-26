@@ -1107,11 +1107,12 @@ const main = async() => {
                             } else {
                                 console.log(`Не покупаем на хаях. CurrentPrice: ${currentPrice} diff ${inputIndicators.psar[buyIndex-1-1] - currentPrice}`)
                             } 
-                            beingExecutedEnterShort = false
                         } else {
                             console.log('unconfirmed conditions short!')
                             logConditions(buyIndex, emaCondition, macdCondition, penetrationCondition, 'short')      
                         }
+                        beingExecutedEnterShort = false
+
                     } else {
                         console.log('already entered short here')
                     }
