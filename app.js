@@ -178,7 +178,7 @@ const waitBuyOrderCompletion = async (direction) => {
 
         buyLongOrderInfo = await binanceClient.fetchOrder(buyLongOrderInfo.id, ticker)
         let amount = buyLongOrderInfo.info.executedQty
-        let initialAmount = buyLongOrderInfo.info.executedQty
+        let initialAmount = buyLongOrderInfo.info.origQty
         if(amount == initialAmount ){
             console.log('LONG ORDER PURCHASE COMPLETE AT DOUBLE CHECK! \n');
             buyQuantity = buyLongOrderInfo.amount
@@ -238,7 +238,7 @@ const waitBuyOrderCompletion = async (direction) => {
 
         buyShortOrderInfo = await binanceClient.fetchOrder(buyShortOrderInfo.id, ticker)
         let amount = buyShortOrderInfo.info.executedQty
-        let initialAmount = buyShortOrderInfo.info.executedQty
+        let initialAmount = buyShortOrderInfo.info.origQty
         if(amount == initialAmount ){
             console.log('SHORT ORDER PURCHASE COMPLETE AT DOUBLE CHECK! \n');
             buyQuantity = buyShortOrderInfo.amount
@@ -335,7 +335,7 @@ const waitSellOrderCompletion = async (direction) => {
 
         sellLongOrderInfo = await binanceClient.fetchOrder(sellLongOrderInfo.id, ticker)
         let amount = sellLongOrderInfo.info.executedQty
-        let initialAmount = sellLongOrderInfo.info.executedQty
+        let initialAmount = sellLongOrderInfo.info.origQty
         if(amount == initialAmount ){
             console.log('LONG ORDER EXIT COMPLETE AT DOUBLE CHECK! \n');
             sellQuantity = sellLongOrderInfo.amount
@@ -390,7 +390,7 @@ const waitSellOrderCompletion = async (direction) => {
         sellShortOrderInfo = await binanceClient.fetchOrder(sellShortOrderInfo.id, ticker)
 
         let amount = sellShortOrderInfo.info.executedQty
-        let initialAmount = sellShortOrderInfo.info.executedQty
+        let initialAmount = sellShortOrderInfo.info.origQty
         if(amount == initialAmount ){
             console.log('SHORT ORDER EXIT COMPLETE AT DOUBLE CHECK! \n');
             sellQuantity = sellShortOrderInfo.amount
