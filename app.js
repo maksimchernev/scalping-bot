@@ -18,7 +18,7 @@ let allowedIds = [422689325, -797023226, 384569274]
 let startMsg
 const candleTypeRange = 5
 const ticker = 'BTC/BUSD'
-let availableBalanceBUSD = 2300
+let availableBalanceBUSD = 2286
 let availableBalanceBTC = 0.1
 
 const binanceClient = new ccxt.binance({
