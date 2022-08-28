@@ -181,14 +181,14 @@ const waitBuyOrderCompletion = async (direction) => {
         let initialAmount = buyLongOrderInfo.info.origQty
         if(amount == initialAmount ){
             console.log('LONG ORDER PURCHASE COMPLETE AT DOUBLE CHECK! \n');
-            buyQuantity = buyLongOrderInfo.amount
+            buyQuantity = amount
             buyPrice = buyLongOrderInfo.average
             busdAmount = buyLongOrderInfo.cost
             buyTime = new Date()
             msg = 'success'
         } else if (buyLongOrderInfo.cost > 15 && amount < initialAmount) {
             console.log(`LONG ORDER PARTIALLY FILLED! ${buyLongOrderInfo.amount}\n`);
-            buyQuantity = buyLongOrderInfo.amount
+            buyQuantity = amount
             buyPrice = buyLongOrderInfo.average
             busdAmount = buyLongOrderInfo.cost
             buyTime = new Date()
@@ -241,26 +241,26 @@ const waitBuyOrderCompletion = async (direction) => {
         let initialAmount = buyShortOrderInfo.info.origQty
         if(amount == initialAmount ){
             console.log('SHORT ORDER PURCHASE COMPLETE AT DOUBLE CHECK! \n');
-            buyQuantity = buyShortOrderInfo.amount
+            buyQuantity = amount
             buyPrice = buyShortOrderInfo.average
             busdAmount = buyShortOrderInfo.cost
             buyTime = new Date()
             msg = 'success'
         } else if (buyShortOrderInfo.cost > 15 && amount < initialAmount) {
             console.log(`SHORT ORDER PARTIALLY FILLED! ${buyShortOrderInfo.amount}\n`);
-            buyQuantity = buyShortOrderInfo.amount
+            buyQuantity = amount
             buyPrice = buyShortOrderInfo.average
             busdAmount = buyShortOrderInfo.cost
             buyTime = new Date()
             msg = 'success'
-            bot.sendMessage(startMsg.chat.id, `Ok! ENTER LONG ORDER PARTIALLY FILLED! Continuing the script. ${buyQuantity} - higher than 15$\n`)
+            bot.sendMessage(startMsg.chat.id, `Ok! ENTER SHORT ORDER PARTIALLY FILLED! Continuing the script. ${buyQuantity} - higher than 15$\n`)
         } else if (buyShortOrderInfo.cost < 15 && buyShortOrderInfo.cost > 0 && amount < initialAmount) {
             busdAmount = null
             buyQuantity = null
             buyPrice = null
             buyTime = new Date()
             msg = 'failure'
-            bot.sendMessage(startMsg.chat.id, `SOS! ENTER LONG ORDER PARTIALLY FILLED!  ${buyShortOrderInfo.amount} - lower than 15$\n`)
+            bot.sendMessage(startMsg.chat.id, `SOS! ENTER SHORT ORDER PARTIALLY FILLED!  ${buyShortOrderInfo.amount} - lower than 15$\n`)
         } else {
             busdAmount = null
             buyQuantity = null
@@ -338,14 +338,14 @@ const waitSellOrderCompletion = async (direction) => {
         let initialAmount = sellLongOrderInfo.info.origQty
         if(amount == initialAmount ){
             console.log('LONG ORDER EXIT COMPLETE AT DOUBLE CHECK! \n');
-            sellQuantity = sellLongOrderInfo.amount
+            sellQuantity = amount
             sellPrice = sellLongOrderInfo.average
             busdAmount = sellLongOrderInfo.cost
             sellTime = new Date()
             msg = 'success'
         } else if (sellLongOrderInfo.cost > 0 && amount < initialAmount) {
             console.log(`LONG EXIT ORDER PARTIALLY FILLED! ${sellLongOrderInfo.amount}\n`);
-            sellQuantity = sellLongOrderInfo.amount
+            sellQuantity = amount
             sellPrice = sellLongOrderInfo.average
             busdAmount = sellLongOrderInfo.cost
             sellTime = new Date()
@@ -393,14 +393,14 @@ const waitSellOrderCompletion = async (direction) => {
         let initialAmount = sellShortOrderInfo.info.origQty
         if(amount == initialAmount ){
             console.log('SHORT ORDER EXIT COMPLETE AT DOUBLE CHECK! \n');
-            sellQuantity = sellShortOrderInfo.amount
+            sellQuantity = amount
             sellPrice = sellShortOrderInfo.average
             busdAmount = sellShortOrderInfo.cost
             sellTime = new Date()
             msg = 'success'
         } else if (sellShortOrderInfo.cost > 0 && amount < initialAmount) {
             console.log(`SHORT EXIT ORDER PARTIALLY FILLED! ${sellShortOrderInfo.amount}\n`);
-            sellQuantity = sellShortOrderInfo.amount
+            sellQuantity = amount
             sellPrice = sellShortOrderInfo.average
             busdAmount = sellShortOrderInfo.cost
             sellTime = new Date()
