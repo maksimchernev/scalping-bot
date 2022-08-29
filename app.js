@@ -350,7 +350,6 @@ const waitSellOrderCompletion = async (direction) => {
             busdAmount = sellLongOrderInfo.cost
             sellTime = new Date()
             msg = 'partiallyfilled'
-            bot.sendMessage(startMsg.chat.id, `Ok! LONG EXIT ORDER PARTIALLY FILLED! Continuing the script. ${sellQuantity} - higher than 15$\n`)
         } else {
             busdAmount = null
             sellQuantity = null
@@ -405,7 +404,6 @@ const waitSellOrderCompletion = async (direction) => {
             busdAmount = sellShortOrderInfo.cost
             sellTime = new Date()
             msg = 'partiallyfilled'
-            bot.sendMessage(startMsg.chat.id, `Ok! SHORT EXIT ORDER PARTIALLY FILLED! Continuing the script. ${sellQuantity} - higher than 15$\n`)
         } else {
             busdAmount = null
             sellQuantity = null
@@ -613,10 +611,11 @@ const exitLong = async (buyPrice, buyTime, buyQuantity, stoploss, takeProfit, cu
         console.log(`Exit long order did not work. Buy price ${buyPrice} at ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} sell ${sellPrice} at ${currentTime}`)
     } else if (msg == 'partiallyfilled') {
         errorDidNotWork = false
+        availableBalanceBUSD = availableBalanceBUSD + busdAmount
         let notFilledBuyQuantity = buyQuantity - sellQuantity
         notSold = [buyPrice, buyTime, notFilledBuyQuantity, stoploss, takeProfit]
-        bot.sendMessage(startMsg.chat.id, `Ok! EXIT LONG ORDER PARTIALLY FILLED! Continuing the script. Exited with ${sellQuantity}BTC which is ${busdAmount}BUSD\n`)
-        console.log(`Ok! EXIT LONG ORDER PARTIALLY FILLED! Continuing the script. Exited with ${sellQuantity}BTC which is ${busdAmount}BUSD\n`)
+        bot.sendMessage(startMsg.chat.id, `Ok! EXIT LONG ORDER PARTIALLY FILLED! Continuing the script. Exited with ${sellQuantity}BTC which is ${busdAmount}BUSD at ${sellPrice}\n`)
+        console.log(`Ok! EXIT LONG ORDER PARTIALLY FILLED! Continuing the script. Exited with ${sellQuantity}BTC which is ${busdAmount}BUSD at ${sellPrice}\n`)
     }
     return {errorDidNotWork, notSold}
 }
@@ -649,10 +648,13 @@ const exitShort = async (buyPrice, buyTime, buyQuantity, stoploss, takeProfit, c
         console.log(`Exit short order did not work. Enter short ${buyPrice} at ${buyTime.toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")} sell ${sellPrice} at ${currentTime}`)
     } else if (msg == 'partiallyfilled') {
         errorDidNotWork = false
+        let busdProfit = sellQuantity*sellPrice*((buyPrice/sellPrice)-1)
         let notFilledBuyQuantity = buyQuantity - sellQuantity
+        availableBalanceBTC = availableBalanceBTC + sellQuantity
+        availableBalanceBUSD = availableBalanceBUSD + busdProfit
         notSold = [buyPrice, buyTime, notFilledBuyQuantity, stoploss, takeProfit]
-        console.log(`Ok! EXIT SHORT ORDER PARTIALLY FILLED! Continuing the script. Exited with ${sellQuantity}BTC which is ${busdAmount}BUSD\n`)
-        bot.sendMessage(startMsg.chat.id, `Ok! EXIT SHORT ORDER PARTIALLY FILLED! Continuing the script. Exited with ${sellQuantity}BTC which is ${busdAmount}BUSD\n`)
+        console.log(`Ok! EXIT SHORT ORDER PARTIALLY FILLED! Continuing the script. Exited with ${sellQuantity}BTC which is ${busdAmount}BUSD at ${sellPrice}\n`)
+        bot.sendMessage(startMsg.chat.id, `Ok! EXIT SHORT ORDER PARTIALLY FILLED! Continuing the script. Exited with ${sellQuantity}BTC which is ${busdAmount}BUSD at ${sellPrice}\n`)
     }  
     return {errorDidNotWork, notSold}                    
 }
