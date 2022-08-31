@@ -18,8 +18,8 @@ let allowedIds = [422689325, -797023226, 384569274]
 let startMsg
 const candleTypeRange = 5
 const ticker = 'BTC/BUSD'
-let availableBalanceBUSD = 2286
-let availableBalanceBTC = 0.1
+let availableBalanceBUSD = 500
+let availableBalanceBTC = 0.025
 
 const binanceClient = new ccxt.binance({
     apiKey: process.env.API_KEY,
@@ -82,6 +82,13 @@ const calculateMACD = async() => {
         inputIndicators.macdSignal = res[1];
       });
 }
+
+const calculateADX = async() => {
+    tulind.indicators.adx.indicator([inputIndicators.high, inputIndicators.low, inputIndicators.close], [3],(err,res) => {
+        if(err) return log(err);
+        inputIndicators.dx = res[0];
+    });
+} 
 
 const calculateEnterQuantity = async (currentPrice, buyArray, Time, direction) => {
     console.log('CALCULATING ENTER QUANTITY');
@@ -732,6 +739,7 @@ const macdConditionShort = () => {
     return macdCondition
 }
 
+
 const penetrationConditionLong = async(buyIndex) => {
     let penetrationCondition
     let prices = await binanceClient.fetchTicker(ticker)
@@ -795,9 +803,9 @@ const divergencyConditionShort = (buyIndex) => {
 
     return divergencyCondition
 }
-const adxCondition = (inputIndicators) => {
+const adxCondition = () => {
     let dxCondition
-    if (inputIndicators.dx[inputIndicators.dx.length-1] < 63) {
+    if (inputIndicators.dx[inputIndicators.dx.length-1] - inputIndicators.dx[inputIndicators.dx.length-2]>0/*  && inputIndicators.dx[inputIndicators.dx.length-1] > 40 */) {
         dxCondition = true
     } else {
         dxCondition = false
@@ -805,7 +813,7 @@ const adxCondition = (inputIndicators) => {
     return dxCondition
 }
 
-const logConditions = (buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, direction) => {
+const logConditions = (buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition,dxCondition, direction) => {
     let TestTime = new Date().toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")
     if (direction == 'long') {
         if (buyIndex) {
@@ -833,6 +841,11 @@ const logConditions = (buyIndex, emaCondition, divergencyCondition, macdConditio
         } else {
             console.log('Has not spot the divergency')
         }
+        if (dxCondition) {
+            console.log('ADX Upslope!')
+        } else {
+            console.log('ADX Downslope')
+        }  
     } else if(direction == 'short') {
         if (buyIndex) {
         console.log(`PSAR short enter signal ${inputIndicators.low.length-1-buyIndex} epoches ago at ${TestTime}`)
@@ -859,6 +872,11 @@ const logConditions = (buyIndex, emaCondition, divergencyCondition, macdConditio
         } else {
             console.log('Has not spot the divergency')
         }
+        if (dxCondition) {
+            console.log('ADX Upslope!')
+        } else {
+            console.log('ADX Downslope')
+        }  
     }
 
 }
@@ -891,6 +909,7 @@ const main = async() => {
             await calculatePSAR();
             await calculateEMA();
             await calculateMACD();
+            await calculateADX()
         } catch (e) {
             console.error('ERROR IN calculateIndicators: ', e);
         }
@@ -913,6 +932,7 @@ const main = async() => {
                 let macdCondition
                 let divergencyCondition
                 let penetrationCondition
+                let dxCondition
                 //logic to check on PSAR before signal location relatively to EMA 
                 if (buyIndex) {
                     console.log('\n', 'ENTER LONG INFO')
@@ -921,6 +941,7 @@ const main = async() => {
                     emaCondition = emaConditionLong(buyIndex)
                     macdCondition = macdConditionLong()
                     divergencyCondition = divergencyConditionLong(buyIndex)
+                    dxCondition = adxCondition()
                     let keepTrying
                     do {
                         try {
@@ -937,8 +958,8 @@ const main = async() => {
                     let TestTime = new Date().toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")
                     console.log(`No psar long enter signal at ${TestTime}. Psar ${inputIndicators.psar[inputIndicators.psar.length-1]}, prev PSAR ${inputIndicators.psar[inputIndicators.psar.length-1-1]}`)
                 }
-                if (buyIndex && (emaCondition || divergencyCondition) && macdCondition && penetrationCondition) {     
-                    logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, 'long')      
+                if (buyIndex && (emaCondition || divergencyCondition) && macdCondition && penetrationCondition && dxCondition) {     
+                    logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, dxCondition,'long')      
                     let Time = new Date()
                     let alreadyBought = false
                     if (buyArrayLong.length != 0 ) {
@@ -974,6 +995,7 @@ const main = async() => {
                                 buyIndex = psarConditionLong(epoches);
                                 emaCondition = emaConditionLong(buyIndex);
                                 macdCondition = macdConditionLong();
+                                dxCondition = adxCondition();
                                 ({currentPrice, penetrationCondition} = await penetrationConditionLong(buyIndex));
                                 divergencyCondition = divergencyConditionLong(buyIndex)
                                 keepTrying = false
@@ -986,8 +1008,8 @@ const main = async() => {
                             }
                         } while (keepTrying)
 
-                        if (buyIndex && (emaCondition || divergencyCondition) && macdCondition && penetrationCondition) {
-                            logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, 'long')      
+                        if (buyIndex && (emaCondition || divergencyCondition) && macdCondition && penetrationCondition && dxCondition) {
+                            logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, dxCondition, 'long')      
                             console.log('Confirmed conditions long!')
                             // не покупать на хаях
                             if (currentPrice - inputIndicators.psar[buyIndex-1-1] < 70) {
@@ -1009,7 +1031,7 @@ const main = async() => {
                             } 
                         } else {
                             console.log('unconfirmed conditions long!')
-                            logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, 'long')      
+                            logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, dxCondition, 'long')      
                         }
 
                         beingExecutedEnterLong = false
@@ -1031,6 +1053,7 @@ const main = async() => {
                 let macdCondition
                 let divergencyCondition
                 let penetrationCondition
+                let dxCondition
                 //logic to check on PSAR before signal location relatively to EMA 
                 if (buyIndex) {
                     console.log('\n', 'ENTER SHORT INFO')
@@ -1039,6 +1062,7 @@ const main = async() => {
                     emaCondition = emaConditionShort(buyIndex)
                     macdCondition = macdConditionShort()
                     divergencyCondition = divergencyConditionShort(buyIndex)
+                    dxCondition = adxCondition()
                     let keepTrying
                     do {
                         try {
@@ -1055,8 +1079,8 @@ const main = async() => {
                     let TestTime = new Date().toLocaleTimeString().replace("/.*(\d{2}:\d{2}:\d{2}).*/", "$1")
                     console.log(`No psar short enter signal at ${TestTime}. Psar ${inputIndicators.psar[inputIndicators.psar.length-1]}, prev PSAR ${inputIndicators.psar[inputIndicators.psar.length-1-1]}`)
                 }
-                if (buyIndex && (emaCondition || divergencyCondition) && macdCondition && penetrationCondition) {
-                    logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, 'short')      
+                if (buyIndex && (emaCondition || divergencyCondition) && macdCondition && penetrationCondition && dxCondition) {
+                    logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, dxCondition, 'short')      
                     let Time = new Date()
                     let alreadyBought = false
                     if (buyArrayShort.length != 0 ) {
@@ -1094,6 +1118,7 @@ const main = async() => {
                                 emaCondition = emaConditionShort(buyIndex);
                                 macdCondition = macdConditionShort();
                                 divergencyCondition = divergencyConditionShort(buyIndex);
+                                dxCondition = adxCondition()
                                 ({currentPrice, penetrationCondition} = await penetrationConditionShort(buyIndex))
                                 console.log('divergencyCondition: ', divergencyCondition)
 
@@ -1105,8 +1130,8 @@ const main = async() => {
                             }
                         } while (keepTrying)
 
-                        if (buyIndex && (emaCondition || divergencyCondition) && macdCondition && penetrationCondition) {
-                            logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, 'short')      
+                        if (buyIndex && (emaCondition || divergencyCondition) && macdCondition && penetrationCondition && dxCondition) {
+                            logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, dxCondition, 'short')      
                             console.log('Confirmed conditions short!')
                             // не покупать на хаях
                             if (inputIndicators.psar[buyIndex-1-1] - currentPrice < 70) {
@@ -1128,7 +1153,7 @@ const main = async() => {
                             } 
                         } else {
                             console.log('unconfirmed conditions short!')
-                            logConditions(buyIndex, emaCondition, macdCondition, penetrationCondition, 'short')      
+                            logConditions(buyIndex, emaCondition, divergencyCondition, macdCondition, penetrationCondition, dxCondition, 'short')      
                         }
                         beingExecutedEnterShort = false
 
